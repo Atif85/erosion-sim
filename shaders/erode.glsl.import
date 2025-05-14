@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://d27u33sssae6u"
+path="res://.godot/imported/erode.glsl-7a0018ca826b1991abc7f7b40c25801d.res"
+
+[deps]
+
+source_file="res://shaders/erode.glsl"
+dest_files=["res://.godot/imported/erode.glsl-7a0018ca826b1991abc7f7b40c25801d.res"]
+
+[params]
+
