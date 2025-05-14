@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://bakasvwixbwnb"]
+[gd_scene load_steps=16 format=3 uid="uid://bakasvwixbwnb"]
 
 [ext_resource type="Script" uid="uid://djofm47htbrvh" path="res://scripts/main.gd" id="1_0wfyh"]
 [ext_resource type="Script" uid="uid://o7ucmac680dq" path="res://scripts/ui.gd" id="2_0wfyh"]
@@ -58,9 +58,10 @@ corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_sugp2"]
 
+[sub_resource type="Theme" id="Theme_tbgi4"]
+
 [node name="Main" type="Node3D"]
 script = ExtResource("1_0wfyh")
-Seed = -66692
 
 [node name="Other" type="Node" parent="."]
 
@@ -101,27 +102,31 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_sugp2")
 access = 2
 
 [node name="Tabs" type="TabContainer" parent="UI/Panel"]
-layout_mode = 0
 offset_left = 15.0
 offset_top = 11.0
 offset_right = 226.0
 offset_bottom = 596.0
 theme_override_styles/panel = SubResource("StyleBoxEmpty_sugp2")
 tab_alignment = 1
-current_tab = 2
+current_tab = 0
 
-[node name="Noise" type="VBoxContainer" parent="UI/Panel/Tabs"]
-visible = false
-clip_contents = true
+[node name="Noise" type="ScrollContainer" parent="UI/Panel/Tabs"]
 layout_mode = 2
+theme = SubResource("Theme_tbgi4")
+follow_focus = true
 metadata/_tab_index = 0
 
-[node name="Mapsize_label" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Container" type="VBoxContainer" parent="UI/Panel/Tabs/Noise"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Mapsize_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 text = "Map Size"
 horizontal_alignment = 1
 
-[node name="Mapsize" type="SpinBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Mapsize" type="SpinBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 tooltip_text = "Number of subdivisions of the initial plane mesh"
 min_value = 64.0
@@ -130,97 +135,115 @@ step = 4.0
 value = 256.0
 rounded = true
 
-[node name="Seed_label" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Seed_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 size_flags_vertical = 0
 text = "Seed"
 horizontal_alignment = 1
 
-[node name="Rand_seed" type="CheckBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Rand_seed" type="CheckBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 button_pressed = true
 text = "Randomize Seed
 "
 
-[node name="Seed" type="SpinBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Seed" type="SpinBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 min_value = -100000.0
 max_value = 100000.0
 value = 96474.0
 rounded = true
 
-[node name="Space" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Noise_type_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
+text = "Noise Type"
+horizontal_alignment = 1
 
-[node name="Freq_label" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Noise_type" type="OptionButton" parent="UI/Panel/Tabs/Noise/Container"]
+layout_mode = 2
+alignment = 1
+selected = 0
+fit_to_longest_item = false
+item_count = 4
+popup/item_0/text = "Perlin"
+popup/item_0/id = 0
+popup/item_1/text = "Cellular"
+popup/item_1/id = 1
+popup/item_2/text = "Simplex"
+popup/item_2/id = 2
+popup/item_3/text = "Value"
+popup/item_3/id = 3
+
+[node name="Freq_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 text = "Frequency"
 horizontal_alignment = 1
 
-[node name="Freq_slider" type="SpinBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Freq_slider" type="SpinBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 min_value = 0.1
 max_value = 10.0
 step = 0.1
 value = 2.0
 
-[node name="Gain_label" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Gain_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 text = "Gain"
 horizontal_alignment = 1
 
-[node name="Gain_slider" type="SpinBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Gain_slider" type="SpinBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 min_value = 0.1
 max_value = 1.0
 step = 0.1
 value = 0.4
 
-[node name="Lacunarity_label" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Lacunarity_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 text = "Lacunarity"
 horizontal_alignment = 1
 
-[node name="Lacunarity_slider" type="SpinBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Lacunarity_slider" type="SpinBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 min_value = 0.1
 max_value = 5.0
 step = 0.1
 value = 2.0
 
-[node name="Octaves_label" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Octaves_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 text = "Ocataves"
 horizontal_alignment = 1
 
-[node name="Octaves" type="SpinBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Octaves" type="SpinBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 min_value = 1.0
 max_value = 10.0
 value = 7.0
 rounded = true
 
-[node name="Height_label" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Height_label" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 text = "Height"
 horizontal_alignment = 1
 
-[node name="Height" type="SpinBox" parent="UI/Panel/Tabs/Noise"]
+[node name="Height" type="SpinBox" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 min_value = 1.0
 max_value = 1000.0
 value = 200.0
 
-[node name="Space2" type="Label" parent="UI/Panel/Tabs/Noise"]
+[node name="Space2" type="Label" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 
-[node name="Regenerate" type="Button" parent="UI/Panel/Tabs/Noise"]
+[node name="Regenerate" type="Button" parent="UI/Panel/Tabs/Noise/Container"]
 layout_mode = 2
 text = "Regenerate"
 
 [node name="Erosion" type="ScrollContainer" parent="UI/Panel/Tabs"]
 visible = false
 layout_mode = 2
+follow_focus = true
 metadata/_tab_index = 1
 
 [node name="Container" type="VBoxContainer" parent="UI/Panel/Tabs/Erosion"]
@@ -344,7 +367,12 @@ layout_mode = 2
 layout_mode = 2
 text = "Erode with GPU"
 
+[node name="Erosion_Anim" type="Button" parent="UI/Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Animated Erosion"
+
 [node name="Other" type="VBoxContainer" parent="UI/Panel/Tabs"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 

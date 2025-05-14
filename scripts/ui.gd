@@ -2,14 +2,15 @@ extends CanvasLayer
 class_name UiClass
 
 # Noise ui nodes
-@onready var ui_mapsize: SpinBox = $Panel/Tabs/Noise/Mapsize
-@onready var ui_seed: SpinBox = $Panel/Tabs/Noise/Seed
-@onready var ui_rand: CheckBox = $Panel/Tabs/Noise/Rand_seed
-@onready var ui_freq_slider: SpinBox = $Panel/Tabs/Noise/Freq_slider
-@onready var ui_gain_slider: SpinBox = $Panel/Tabs/Noise/Gain_slider
-@onready var ui_lac_slider: SpinBox = $Panel/Tabs/Noise/Lacunarity_slider
-@onready var ui_octaves: SpinBox = $Panel/Tabs/Noise/Octaves
-@onready var ui_height: SpinBox = $Panel/Tabs/Noise/Height
+@onready var ui_mapsize: SpinBox = $Panel/Tabs/Noise/Container/Mapsize
+@onready var ui_seed: SpinBox = $Panel/Tabs/Noise/Container/Seed
+@onready var ui_rand: CheckBox = $Panel/Tabs/Noise/Container/Rand_seed
+@onready var ui_freq_slider: SpinBox = $Panel/Tabs/Noise/Container/Freq_slider
+@onready var ui_gain_slider: SpinBox = $Panel/Tabs/Noise/Container/Gain_slider
+@onready var ui_lac_slider: SpinBox = $Panel/Tabs/Noise/Container/Lacunarity_slider
+@onready var ui_octaves: SpinBox = $Panel/Tabs/Noise/Container/Octaves
+@onready var ui_height: SpinBox = $Panel/Tabs/Noise/Container/Height
+@onready var noise_type_selector: OptionButton = $Panel/Tabs/Noise/Container/Noise_type
 
 # Erosion ui nodes
 @onready var ui_droplets: SpinBox = $Panel/Tabs/Erosion/Container/Droplets
@@ -24,8 +25,9 @@ class_name UiClass
 @onready var ui_start_water: SpinBox = $Panel/Tabs/Erosion/Container/Start_water
 
 # Ui buttons
-@onready var regen_button: Button = $Panel/Tabs/Noise/Regenerate
+@onready var regen_button: Button = $Panel/Tabs/Noise/Container/Regenerate
 @onready var erode_gpu: Button = $Panel/Tabs/Erosion/Container/Erode_GPU
+@onready var erosion_anim: Button = $Panel/Tabs/Erosion/Container/Erosion_Anim
 @onready var save: Button = $Panel/Tabs/Other/Save
 
 # Other ui
@@ -47,6 +49,8 @@ func _ready() -> void:
 	save.pressed.connect(save_as_png)
 	snow_slope.value_changed.connect(_on_snow_slope_value_changed)
 	snow_blend.value_changed.connect(_on_snow_blend_value_changed)
+	erosion_anim.pressed.connect(main.animated_erosion)
+	noise_type_selector.item_selected.connect(on_noise_type_changed)
 	
 	# Getting file dialog ready
 	file_dialog.use_native_dialog = true
@@ -61,7 +65,7 @@ func _ready() -> void:
 
 func on_file_dialog_file_selected(path: String):
 	print(path)
-	main.create_image(true,path)
+	main.create_image(main.orignal_map_data,true,path)
 
 func save_as_png():
 	file_dialog.popup_centered()
@@ -73,13 +77,8 @@ func regen_button_pressed() -> void:
 	ui_seed.value = main.Seed
 
 func erode_gpu_pressed():
-	set_erosion_vars_from_ui()
-	
-	var temp : bool = main.randomize_seed
-	main.randomize_seed = false
-	main.generate()
-	main.randomize_seed = temp
-	erosion.erode_with_gpu()
+	main.erode()
+	main.create_mesh(main.eroded_map_data)
 
 func set_erosion_ui_from_vars():
 	ui_droplets.value = erosion.num_droplets
@@ -121,8 +120,8 @@ func set_noise_vars_from_ui():
 	main.Seed           = int(ui_seed.value)
 	main.frequency      = ui_freq_slider.value
 	main.gain           = ui_gain_slider.value
-	main.lacunarity     = ui_lac_slider.value 
-	main.num_octaves    = int(ui_octaves.value )
+	main.lacunarity     = ui_lac_slider.value
+	main.num_octaves    = int(ui_octaves.value)
 	main.height_scale   = ui_height.value
 
 
@@ -133,3 +132,12 @@ func _on_snow_slope_value_changed(value: float) -> void:
 func _on_snow_blend_value_changed(value: float) -> void:
 	main.material.set_shader_parameter("snow_blend_amount", value)
 	print(main.material)
+
+func on_noise_type_changed(index: int) -> void:
+	# Update the noise type based on the selected index
+	match index:
+		0: main.noise_type = FastNoiseLite.TYPE_PERLIN
+		1: main.noise_type = FastNoiseLite.TYPE_CELLULAR
+		2: main.noise_type = FastNoiseLite.TYPE_SIMPLEX
+		3: main.noise_type = FastNoiseLite.TYPE_VALUE
+

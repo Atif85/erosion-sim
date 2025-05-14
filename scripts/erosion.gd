@@ -1,7 +1,5 @@
+# Erosion.gd
 extends Node
-
-# Nodes
-@onready var main: MainClass = $".."
 
 # Erosion vars
 @export var num_droplets: int = 70000
@@ -17,8 +15,8 @@ extends Node
 @export var start_water: float = 1
 
 var rd: RenderingDevice
-var shader: RID     
-var pipeline: RID
+var shader_rid: RID     
+var pipeline_rid: RID
 var is_initialized := false
 var push_constant_size = 48
 var shader_path := "res://shaders/erode.glsl"
@@ -27,30 +25,39 @@ func _ready() -> void:
 	call_deferred("init_rendering_device")
 
 func init_rendering_device():
+	# Initialize the RenderingDevice
 	rd = RenderingServer.get_rendering_device()
 	if not rd:
 		printerr("Erosion Node: Failed to get RenderingDevice.")
 		return
 	
+	# Load the shader
 	var shader_file: Resource = load(shader_path)
 	if not shader_file or not shader_file is RDShaderFile:
-		printerr("Erosion Node: Failed to load shader file or incorrect type")
+		printerr("Erosion Node: Failed to load shader_rid file or incorrect type")
 		return
 	
+	# Create the shader_rid from the shader file
 	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
 	if not shader_spirv or not shader_spirv is RDShaderSPIRV:
-		printerr("Erosion node: Failed to create shader spirv")
-	shader = rd.shader_create_from_spirv(shader_spirv)
-	pipeline = rd.compute_pipeline_create(shader)
+		printerr("Erosion node: Failed to create shader_rid spirv")
+	shader_rid = rd.shader_create_from_spirv(shader_spirv)
+	pipeline_rid = rd.compute_pipeline_create(shader_rid)
+	is_initialized = true
 
-func erode_with_gpu():
-	
-	var time_start_erode = Time.get_ticks_usec()
+func erode_with_gpu(heightmap_in: PackedFloat32Array, map_size_in: int) -> PackedFloat32Array:
+	if not is_initialized:
+		printerr("Erosion Compute Node not initialized. Cannot erode.")
+		return heightmap_in # Return original map on error
 
-	var mapsize : int = main.map_size
+	if not heightmap_in or heightmap_in.is_empty() or map_size_in <= 1:
+		printerr("GPU Erosion Error: Invalid input heightmap or map size.")
+		return heightmap_in
+
+	var mapsize : int = map_size_in
 	
 	# Creating storage buffers
-	var hm_bytes := main.heightmap_data.to_byte_array()
+	var hm_bytes := heightmap_in.to_byte_array()
 	var hm_buffer = rd.storage_buffer_create(hm_bytes.size(), hm_bytes)
 
 	# --- Uniform Set Creation ---
@@ -63,7 +70,7 @@ func erode_with_gpu():
 	uniforms.append(hm_uniform)
 
 	# Create the set
-	var temp_uniform_set = rd.uniform_set_create(uniforms, shader, 0)
+	var temp_uniform_set = rd.uniform_set_create(uniforms, shader_rid, 0)
 	
 		# --- Prepare Push Constant Data ---
 	# MUST match the order and types in the GLSL push_constant block exactly
@@ -80,11 +87,11 @@ func erode_with_gpu():
 	push_constant_data.encode_float(32, gravity)                
 	push_constant_data.encode_float(36, start_speed)    
 	push_constant_data.encode_float(40, start_water)
-	push_constant_data.encode_float(44, Time.get_ticks_usec() / 1000)
+	push_constant_data.encode_float(44, Time.get_ticks_usec() / 1000.0)
 
-	# ---  Dispatch Compute Shader ---
+	# ---  Dispatch Compute shader_rid ---
 	var compute_list = rd.compute_list_begin()
-	rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
+	rd.compute_list_bind_compute_pipeline(compute_list, pipeline_rid)
 	rd.compute_list_bind_uniform_set(compute_list, temp_uniform_set, 0)
 	rd.compute_list_set_push_constant(compute_list, push_constant_data, push_constant_size)
 	
@@ -104,17 +111,14 @@ func erode_with_gpu():
 	rd.free_rid(temp_uniform_set)
 	rd.free_rid(hm_buffer)
 	
-	main.heightmap_data = result_hm_bytes.to_float32_array()
-	main.create_mesh()
-	var time_end_erode = Time.get_ticks_usec()
-	print("Erosion with GPU took ",(time_end_erode - time_start_erode)/ 1000000.0," seconds")
+	return(result_hm_bytes.to_float32_array())
 
 func _exit_tree():
 	if rd:
-		if pipeline.is_valid():
-			rd.free_rid(pipeline)
-			pipeline = RID()
-		if shader.is_valid():
-			rd.free_rid(shader)
-			shader = RID()
+		if pipeline_rid.is_valid():
+			rd.free_rid(pipeline_rid)
+			pipeline_rid = RID()
+		if shader_rid.is_valid():
+			rd.free_rid(shader_rid)
+			shader_rid = RID()
 	print("Erosion Compute Node Cleaned Up")
