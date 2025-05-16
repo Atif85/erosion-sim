@@ -1,5 +1,6 @@
 #[compute]
 #version 450
+#extension GL_EXT_shader_atomic_float : require
 
 layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
 
@@ -40,19 +41,22 @@ float getKernelValue(int row, int col)
 // function to calculate the height and the gradient
 vec3 calculateHeightAndGradient(float posX, float posY)
 {
-    int coordX = int(posX);
-    int coordY = int(posY);
+    int DropletNodeX = int(posX);
+    int DropletNodeY = int(posY);
 
     // Calculate droplet's offset inside the cell [0,1] range
-    float x = posX - float(coordX);
-    float y = posY - float(coordY);
+    float OffsetX = posX - float(DropletNodeX);
+    float OffsetY = posY - float(DropletNodeY);
 
-    // Calculate heights of the four nodes of the droplet's cell
-    int nodeIndexNW = coordY * pc.mapSize + coordX;
-    float heightNW = map[nodeIndexNW];
-    float heightNE = map[min(nodeIndexNW + 1, pc.mapSize * pc.mapSize - 1)];
-    float heightSW = map[min(nodeIndexNW + pc.mapSize, pc.mapSize * pc.mapSize - 1)];
-    float heightSE = map[min(nodeIndexNW + pc.mapSize + 1, pc.mapSize * pc.mapSize - 1)];
+    float x = OffsetX;
+    float y = OffsetY;
+
+    int idx_nw = DropletNodeY * pc.mapSize + DropletNodeX;
+
+    float heightNW = map[idx_nw];
+    float heightNE = map[idx_nw + 1];
+    float heightSW = map[idx_nw + pc.mapSize];
+    float heightSE = map[idx_nw + pc.mapSize + 1];
 
     // Calculate droplet's direction of flow with bilinear interpolation
     float gradientX = (heightNE - heightNW) * (1.0 - y) + (heightSE - heightSW) * y;
@@ -64,10 +68,24 @@ vec3 calculateHeightAndGradient(float posX, float posY)
     return vec3(gradientX, gradientY, height);
 }
 
-// —————————————————————————————
-// Simple 32-bit xorshift RNG in GLSL
-// —————————————————————————————
+// Helper function to deposit sediment at the droplet's current cell
+void depositSedimentAtCell(int DropletNodeX, int DropletNodeY, float OffsetX, float OffsetY, float amountToDeposit) {
+    if (amountToDeposit <= 0.0) {
+        return;
+    }
 
+    int idx_nw = DropletNodeY * pc.mapSize + DropletNodeX;
+
+    if (DropletNodeX >= 0 && DropletNodeX < pc.mapSize && DropletNodeY >= 0 && DropletNodeY < pc.mapSize) {
+
+        atomicAdd(map[idx_nw], amountToDeposit * (1.0 - OffsetX) * (1.0 - OffsetY));
+        atomicAdd(map[idx_nw + 1], amountToDeposit * OffsetX       * (1.0 - OffsetY));
+        atomicAdd(map[idx_nw + pc.mapSize ], amountToDeposit * (1.0 - OffsetX) * OffsetY);
+        atomicAdd(map[idx_nw + pc.mapSize + 1], amountToDeposit * OffsetX       * OffsetY);
+    }
+}
+
+// Simple 32-bit xorshift RNG in GLSL
 uint rng_state;
 
 void seed_rng()
@@ -113,15 +131,21 @@ void main()
     float water = pc.startWater;
     float sediment = 0.0;
 
+    int nodeX = 0;
+    int nodeY = 0;
+    float offset_x = 0.0;
+    float offset_y = 0.0;
+
+    // Droplet simulation loop
     for (int lifetime = 0; lifetime < pc.maxSteps; lifetime++)
     {
-        int nodeX = int(posX);
-        int nodeY = int(posY);
+        nodeX = int(posX);
+        nodeY = int(posY);
         int dropletIndex = nodeY * pc.mapSize + nodeX;
 
         // Calculating droplet's offset inside the cell [0,1] range
-        float offset_x = posX - float(nodeX);
-        float offset_y = posY - float(nodeY);
+        offset_x = posX - float(nodeX);
+        offset_y = posY - float(nodeY);
 
         // Calculating droplet's height and direction of flow
         vec3 heightAndGradient = calculateHeightAndGradient(posX, posY);
@@ -133,24 +157,21 @@ void main()
 
         // Normalizing direction vector
         float len = length(vec2(dirX, dirY));
-        
-        if (len == 0.0)
-        {
-            break; // No flow, exit the loop
-        }
 
-        dirX /= len;
-        dirY /= len;
+        if (len != 0) {
+            dirX /= len;
+            dirY /= len;
+        }
 
         // Move droplet position
         posX += dirX;
         posY += dirY;
 
         // Stop simulating if droplet has flowed over the border edge
-        // Use borderSize passed via push constants
-        if (water <= 0.0 || (dirX == 0.0 && dirY == 0.0) || posX < 0.0 ||
-            posX > float(pc.mapSize - 1) || posY < 0.0 || posY > float(pc.mapSize - 1))
+        if ((dirX == 0.0 && dirY == 0.0) || posX < 0.0 || 
+        posX > float(pc.mapSize - 1) || posY < 0.0 || posY > float(pc.mapSize - 1))
         {
+            depositSedimentAtCell(nodeX, nodeY, offset_x, offset_y, sediment);
             break;
         }
 
@@ -166,20 +187,11 @@ void main()
         {
             // Deposit sediment
             float amountToDeposit = (heightDelta > 0.0) ? min(heightDelta, sediment) : (sediment - sedimentCapacity) * pc.depositRate; // Exceed capacity, deposit fraction
+            
+            depositSedimentAtCell(nodeX, nodeY, offset_x, offset_y, amountToDeposit);
+
             sediment -= amountToDeposit;
-
-            // Distribute deposit bilinearly onto the four neighbor nodes
-            // atomicAdd(map[dropletIndex], amountToDeposit * (1.0 - offset_x) * (1.0 - offset_y));
-            // atomicAdd(map[dropletIndex + 1], amountToDeposit * offset_x       * (1.0 - offset_y));
-            // atomicAdd(map[dropletIndex + pc.mapSize], amountToDeposit * (1.0 - offset_x) * offset_y);
-            // atomicAdd(map[dropletIndex + pc.mapSize + 1], amountToDeposit * offset_x       * offset_y);
-
-
-            map[dropletIndex]                 += amountToDeposit * (1.0 - offset_x) * (1.0 - offset_y);
-            map[dropletIndex + 1]             += amountToDeposit * offset_x       * (1.0 - offset_y);
-            map[dropletIndex + pc.mapSize]    += amountToDeposit * (1.0 - offset_x) * offset_y;
-            map[dropletIndex + pc.mapSize + 1]+= amountToDeposit * offset_x       * offset_y;
-
+            sediment = max(0.0, sediment);
         }
         else
         {
@@ -194,14 +206,21 @@ void main()
                     int iy = clamp(nodeY + j, 0, pc.mapSize - 1);
                     float kernelWeight = getKernelValue(i + 1, j + 1);
                     float remove = amountToErode * kernelWeight;
-                    map[iy * pc.mapSize + ix] = clamp(map[iy * pc.mapSize + ix] - remove, 0.0, 1.0);
+
+                    int erodeIndex = iy * pc.mapSize + ix;
+
+                    float actualRemove = min(remove, map[erodeIndex]);
+                    atomicAdd(map[erodeIndex], -actualRemove); 
+
+                    map[erodeIndex] = clamp(map[erodeIndex], 0.0, 1.0);
+
                     sediment += remove;
                 }
             }
         }
     
         // Update speed and water amount
-        speed = sqrt(max(0.0, speed * speed + heightDelta * pc.gravity)); // Apply gravity, prevent negative speed squared
+        speed = sqrt(speed * speed + heightDelta * pc.gravity); // Apply gravity, prevent negative speed squared
         water *= (1.0 - pc.evaporateSpeed); // Evaporate water
     }
 }

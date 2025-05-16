@@ -1,6 +1,19 @@
 # Erosion.gd
 extends Node
 
+# Default parameters
+const DEFAULT_NUM_DROPLETS = 70000
+const DEFAULT_MAX_STEPS = 30
+const DEFAULT_INERTIA = 0.05
+const DEFAULT_CAPACITY_FACTOR = 5.0
+const DEFAULT_MIN_CAPACITY = 0.01
+const DEFAULT_ERODE_RATE = 0.3
+const DEFAULT_DEPOSIT_RATE = 0.3
+const DEFAULT_EVAPORATE_RATE = 0.01
+const DEFAULT_GRAVITY = 4
+const DEFAULT_START_SPEED = 1
+const DEFAULT_START_WATER = 1
+
 # Erosion vars
 @export var num_droplets: int = 70000
 @export var max_steps: int = 25
@@ -13,11 +26,13 @@ extends Node
 @export var gravity: float = 4
 @export var start_speed: float = 1
 @export var start_water: float = 1
+@export var erosionBrushRadius = 3
 
+
+# Shader vars
 var rd: RenderingDevice
 var shader_rid: RID     
 var pipeline_rid: RID
-var is_initialized := false
 var push_constant_size = 48
 var shader_path := "res://shaders/erode.glsl"
 
@@ -43,16 +58,8 @@ func init_rendering_device():
 		printerr("Erosion node: Failed to create shader_rid spirv")
 	shader_rid = rd.shader_create_from_spirv(shader_spirv)
 	pipeline_rid = rd.compute_pipeline_create(shader_rid)
-	is_initialized = true
 
 func erode_with_gpu(heightmap_in: PackedFloat32Array, map_size_in: int) -> PackedFloat32Array:
-	if not is_initialized:
-		printerr("Erosion Compute Node not initialized. Cannot erode.")
-		return heightmap_in # Return original map on error
-
-	if not heightmap_in or heightmap_in.is_empty() or map_size_in <= 1:
-		printerr("GPU Erosion Error: Invalid input heightmap or map size.")
-		return heightmap_in
 
 	var mapsize : int = map_size_in
 	
@@ -121,4 +128,3 @@ func _exit_tree():
 		if shader_rid.is_valid():
 			rd.free_rid(shader_rid)
 			shader_rid = RID()
-	print("Erosion Compute Node Cleaned Up")

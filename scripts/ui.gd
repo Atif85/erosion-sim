@@ -10,7 +10,9 @@ class_name UiClass
 @onready var ui_lac_slider: SpinBox = $Panel/Tabs/Noise/Container/Lacunarity_slider
 @onready var ui_octaves: SpinBox = $Panel/Tabs/Noise/Container/Octaves
 @onready var ui_height: SpinBox = $Panel/Tabs/Noise/Container/Height
+
 @onready var noise_type_selector: OptionButton = $Panel/Tabs/Noise/Container/Noise_type
+@onready var erosion_anim_length: SpinBox = $Panel/Tabs/Other/Erosion_anim_length
 
 # Erosion ui nodes
 @onready var ui_droplets: SpinBox = $Panel/Tabs/Erosion/Container/Droplets
@@ -29,6 +31,7 @@ class_name UiClass
 @onready var erode_gpu: Button = $Panel/Tabs/Erosion/Container/Erode_GPU
 @onready var erosion_anim: Button = $Panel/Tabs/Erosion/Container/Erosion_Anim
 @onready var save: Button = $Panel/Tabs/Other/Save
+@onready var set_defaults: Button =  $Panel/Tabs/Other/Set_defaults
 
 # Other ui
 @onready var file_dialog: FileDialog = $Panel/FileDialog
@@ -40,8 +43,7 @@ class_name UiClass
 @onready var erosion: Node = $"../Erosion"
 
 func _ready() -> void:
-	snow_slope.value = 0.24
-	snow_blend.value = 0.3
+	set_vars_to_default()
 	
 	# Connecting buttons
 	regen_button.pressed.connect(regen_button_pressed)
@@ -51,6 +53,8 @@ func _ready() -> void:
 	snow_blend.value_changed.connect(_on_snow_blend_value_changed)
 	erosion_anim.pressed.connect(main.animated_erosion)
 	noise_type_selector.item_selected.connect(on_noise_type_changed)
+	set_defaults.pressed.connect(set_vars_to_default)
+	erosion_anim_length.value_changed.connect(set_animation_duration)
 	
 	# Getting file dialog ready
 	file_dialog.use_native_dialog = true
@@ -59,12 +63,29 @@ func _ready() -> void:
 	file_dialog.filters = ["*.png ; PNG File"]
 	file_dialog.current_file = "heightmap.png"
 	file_dialog.file_selected.connect(on_file_dialog_file_selected)
-	
-	set_noise_ui_from_vars()
-	set_erosion_ui_from_vars()
+
+
+
+func _on_snow_slope_value_changed(value: float) -> void:
+	main.material.set_shader_parameter("snow_slope_threshold", value)
+
+func _on_snow_blend_value_changed(value: float) -> void:
+	main.material.set_shader_parameter("snow_blend_amount", value)
+
+func on_noise_type_changed(index: int) -> void:
+	# Update the noise type based on the selected index
+	match index:
+		0: main.noise_type = FastNoiseLite.TYPE_PERLIN
+		1: main.noise_type = FastNoiseLite.TYPE_CELLULAR
+		2: main.noise_type = FastNoiseLite.TYPE_SIMPLEX
+		3: main.noise_type = FastNoiseLite.TYPE_VALUE
+
+func set_animation_duration(value: float) -> void:
+	# Set the animation duration in seconds
+	main.animation_duration_sec = value
 
 func on_file_dialog_file_selected(path: String):
-	print(path)
+	print("Heightmap image saved to: ", path)
 	main.create_image(main.orignal_map_data,true,path)
 
 func save_as_png():
@@ -77,20 +98,11 @@ func regen_button_pressed() -> void:
 	ui_seed.value = main.Seed
 
 func erode_gpu_pressed():
+	if main.is_eroding_animated:
+		print("Animation already in progress.")
+		return
 	main.erode()
 	main.create_mesh(main.eroded_map_data)
-
-func set_erosion_ui_from_vars():
-	ui_droplets.value = erosion.num_droplets
-	ui_max_steps.value = erosion.max_steps
-	ui_inertia.value = erosion.inertia
-	ui_capacity.value = erosion.capacity_factor
-	ui_erode_rate.value = erosion.erode_rate
-	ui_deposit_rate.value = erosion.deposit_rate
-	ui_evaporate_rate.value = erosion.evaporate_rate
-	ui_gravity.value = erosion.gravity
-	ui_start_speed.value = erosion.start_speed
-	ui_start_water.value = erosion.start_water
 
 func set_erosion_vars_from_ui():
 	erosion.num_droplets = ui_droplets.value
@@ -104,16 +116,6 @@ func set_erosion_vars_from_ui():
 	erosion.start_speed = ui_start_speed.value
 	erosion.start_water = ui_start_water.value
 
-func set_noise_ui_from_vars():
-	ui_mapsize.value       = main.map_size
-	ui_seed.value          = main.Seed
-	ui_rand.button_pressed = main.randomize_seed
-	ui_freq_slider.value   = main.frequency
-	ui_gain_slider.value   = main.gain
-	ui_lac_slider.value    = main.lacunarity
-	ui_octaves.value       = main.num_octaves
-	ui_height.value        = main.height_scale
-
 func set_noise_vars_from_ui():
 	main.map_size       = ui_mapsize.value
 	main.randomize_seed = ui_rand.button_pressed
@@ -124,20 +126,60 @@ func set_noise_vars_from_ui():
 	main.num_octaves    = int(ui_octaves.value)
 	main.height_scale   = ui_height.value
 
+func set_vars_to_default():
+	# Settig ui values to default
+	# nosie ui
+	ui_mapsize.value       = main.DEFAULT_MAP_SIZE
+	ui_seed.value          = main.DEFAULT_SEED
+	ui_rand.button_pressed = main.DEFAULT_RANDOMIZE_SEED
+	ui_freq_slider.value   = main.DEFAULT_FREQUENCY
+	ui_gain_slider.value   = main.DEFAULT_GAIN
+	ui_lac_slider.value    = main.DEFAULT_LACUNARITY
+	ui_octaves.value       = main.DEFAULT_NUM_OCTAVES
+	ui_height.value        = main.DEFAULT_HEIGHT_SCALE
+	noise_type_selector.selected = 0
+	
+	# erosion ui
+	ui_droplets.value       = erosion.DEFAULT_NUM_DROPLETS
+	ui_max_steps.value      = erosion.DEFAULT_MAX_STEPS
+	ui_inertia.value        = erosion.DEFAULT_INERTIA
+	ui_capacity.value       = erosion.DEFAULT_CAPACITY_FACTOR
+	ui_erode_rate.value     = erosion.DEFAULT_ERODE_RATE
+	ui_deposit_rate.value   = erosion.DEFAULT_DEPOSIT_RATE
+	ui_evaporate_rate.value = erosion.DEFAULT_EVAPORATE_RATE
+	ui_gravity.value        = erosion.DEFAULT_GRAVITY
+	ui_start_speed.value    = erosion.DEFAULT_START_SPEED
+	ui_start_water.value    = erosion.DEFAULT_START_WATER
 
-func _on_snow_slope_value_changed(value: float) -> void:
-	main.material.set_shader_parameter("snow_slope_threshold", value)
-	print(main.material)
+	# Setting vars to default
+	# noise vars
+	main.map_size       = main.DEFAULT_MAP_SIZE
+	main.randomize_seed = main.DEFAULT_RANDOMIZE_SEED
+	main.Seed           = main.DEFAULT_SEED
+	main.frequency      = main.DEFAULT_FREQUENCY
+	main.gain           = main.DEFAULT_GAIN
+	main.lacunarity     = main.DEFAULT_LACUNARITY
+	main.num_octaves    = main.DEFAULT_NUM_OCTAVES
+	main.height_scale   = main.DEFAULT_HEIGHT_SCALE
+	main.noise_type     = main.DEFAULT_NOISE_TYPE
 
-func _on_snow_blend_value_changed(value: float) -> void:
-	main.material.set_shader_parameter("snow_blend_amount", value)
-	print(main.material)
+	# erosion vars
+	erosion.num_droplets       = erosion.DEFAULT_NUM_DROPLETS
+	erosion.max_steps          = erosion.DEFAULT_MAX_STEPS
+	erosion.inertia            = erosion.DEFAULT_INERTIA
+	erosion.capacity_factor    = erosion.DEFAULT_CAPACITY_FACTOR
+	erosion.erode_rate         = erosion.DEFAULT_ERODE_RATE
+	erosion.deposit_rate       = erosion.DEFAULT_DEPOSIT_RATE
+	erosion.evaporate_rate     = erosion.DEFAULT_EVAPORATE_RATE
+	erosion.gravity            = erosion.DEFAULT_GRAVITY
+	erosion.start_speed        = erosion.DEFAULT_START_SPEED
+	erosion.start_water        = erosion.DEFAULT_START_WATER
 
-func on_noise_type_changed(index: int) -> void:
-	# Update the noise type based on the selected index
-	match index:
-		0: main.noise_type = FastNoiseLite.TYPE_PERLIN
-		1: main.noise_type = FastNoiseLite.TYPE_CELLULAR
-		2: main.noise_type = FastNoiseLite.TYPE_SIMPLEX
-		3: main.noise_type = FastNoiseLite.TYPE_VALUE
+	# Setting default values for snow vars
+	snow_slope.value = 0.24
+	snow_blend.value = 0.3
 
+	# Setting default values for animation
+	erosion_anim_length.value = main.DEFAULT_ANIMATION_DURATION
+	# Setting default values for erosion animation
+	main.animation_duration_sec = main.DEFAULT_ANIMATION_DURATION

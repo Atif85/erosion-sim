@@ -1,0 +1,351 @@
+[gd_scene load_steps=5 format=3 uid="uid://c50vflhun6ysl"]
+
+[ext_resource type="Script" uid="uid://o7ucmac680dq" path="res://scripts/ui.gd" id="1_nt7q6"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sugp2"]
+bg_color = Color(0.127439, 0.160168, 0.182971, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_sugp2"]
+
+[sub_resource type="Theme" id="Theme_tbgi4"]
+
+[node name="UI" type="CanvasLayer"]
+script = ExtResource("1_nt7q6")
+
+[node name="Panel" type="Panel" parent="."]
+offset_left = 16.0
+offset_top = 54.0
+offset_right = 252.0
+offset_bottom = 667.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_sugp2")
+
+[node name="FileDialog" type="FileDialog" parent="Panel"]
+auto_translate_mode = 1
+access = 2
+
+[node name="Tabs" type="TabContainer" parent="Panel"]
+layout_mode = 0
+offset_left = 15.0
+offset_top = 11.0
+offset_right = 226.0
+offset_bottom = 596.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_sugp2")
+tab_alignment = 1
+current_tab = 0
+
+[node name="Noise" type="ScrollContainer" parent="Panel/Tabs"]
+layout_mode = 2
+theme = SubResource("Theme_tbgi4")
+follow_focus = true
+metadata/_tab_index = 0
+
+[node name="Container" type="VBoxContainer" parent="Panel/Tabs/Noise"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Mapsize_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Map Size"
+horizontal_alignment = 1
+
+[node name="Mapsize" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+tooltip_text = "Number of subdivisions of the initial plane mesh"
+min_value = 64.0
+max_value = 4096.0
+step = 4.0
+value = 256.0
+rounded = true
+
+[node name="Seed_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+size_flags_vertical = 0
+text = "Seed"
+horizontal_alignment = 1
+
+[node name="Rand_seed" type="CheckBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+button_pressed = true
+text = "Randomize Seed
+"
+
+[node name="Seed" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+min_value = -100000.0
+max_value = 100000.0
+value = 96474.0
+rounded = true
+
+[node name="Noise_type_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Noise Type"
+horizontal_alignment = 1
+
+[node name="Noise_type" type="OptionButton" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+alignment = 1
+selected = 0
+fit_to_longest_item = false
+item_count = 4
+popup/item_0/text = "Perlin"
+popup/item_0/id = 0
+popup/item_1/text = "Cellular"
+popup/item_1/id = 1
+popup/item_2/text = "Simplex"
+popup/item_2/id = 2
+popup/item_3/text = "Value"
+popup/item_3/id = 3
+
+[node name="Freq_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Frequency"
+horizontal_alignment = 1
+
+[node name="Freq_slider" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+min_value = 0.1
+max_value = 10.0
+step = 0.1
+value = 2.0
+
+[node name="Gain_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Gain"
+horizontal_alignment = 1
+
+[node name="Gain_slider" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+min_value = 0.1
+max_value = 1.0
+step = 0.1
+value = 0.4
+
+[node name="Lacunarity_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Lacunarity"
+horizontal_alignment = 1
+
+[node name="Lacunarity_slider" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+min_value = 0.1
+max_value = 5.0
+step = 0.1
+value = 2.0
+
+[node name="Octaves_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Ocataves"
+horizontal_alignment = 1
+
+[node name="Octaves" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+min_value = 1.0
+max_value = 10.0
+value = 7.0
+rounded = true
+
+[node name="Height_label" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Height"
+horizontal_alignment = 1
+
+[node name="Height" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1000.0
+value = 200.0
+
+[node name="Space2" type="Label" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+
+[node name="Regenerate" type="Button" parent="Panel/Tabs/Noise/Container"]
+layout_mode = 2
+text = "Regenerate"
+
+[node name="Erosion" type="ScrollContainer" parent="Panel/Tabs"]
+visible = false
+layout_mode = 2
+follow_focus = true
+metadata/_tab_index = 1
+
+[node name="Container" type="VBoxContainer" parent="Panel/Tabs/Erosion"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Droplets_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Droplets"
+horizontal_alignment = 1
+
+[node name="Droplets" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+min_value = 10.0
+max_value = 1e+07
+step = 10.0
+value = 70000.0
+rounded = true
+
+[node name="Max_steps_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Droplet lifetime"
+horizontal_alignment = 1
+
+[node name="Max_steps" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+max_value = 10000.0
+value = 25.0
+rounded = true
+
+[node name="Inertia_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Inertia"
+horizontal_alignment = 1
+
+[node name="Inertia" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.05
+
+[node name="Capacity_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Capacity"
+horizontal_alignment = 1
+
+[node name="Capacity" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+max_value = 50.0
+step = 0.1
+value = 5.0
+
+[node name="Erode_rate_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Erosion Rate"
+horizontal_alignment = 1
+
+[node name="Erode_rate" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.3
+
+[node name="Deposit_rate_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Deposit Rate"
+horizontal_alignment = 1
+
+[node name="Deposit_rate" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.3
+
+[node name="Evaporate_rate_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Evaporation Rate"
+horizontal_alignment = 1
+
+[node name="Evaporate_rate" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.01
+
+[node name="Gravity_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Gravity"
+horizontal_alignment = 1
+
+[node name="Gravity" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+max_value = 20.0
+step = 0.1
+value = 4.0
+
+[node name="Start_speed_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Starting Speed"
+horizontal_alignment = 1
+
+[node name="Start_speed" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+
+[node name="Start_water_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Starting Water"
+horizontal_alignment = 1
+
+[node name="Start_water" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+step = 0.1
+value = 1.0
+
+[node name="Label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+
+[node name="Erode_GPU" type="Button" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Erode with GPU"
+
+[node name="Erosion_Anim" type="Button" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Animated Erosion"
+
+[node name="Other" type="VBoxContainer" parent="Panel/Tabs"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="Label" type="Label" parent="Panel/Tabs/Other"]
+layout_mode = 2
+
+[node name="Snow_slope_label" type="Label" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Snow Slope Threshold"
+horizontal_alignment = 1
+
+[node name="Snow_slope" type="HSlider" parent="Panel/Tabs/Other"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="Snow_blend_label" type="Label" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Snow Blend Amount"
+horizontal_alignment = 1
+
+[node name="Snow_blend" type="HSlider" parent="Panel/Tabs/Other"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+
+[node name="Erosion_anim_length_label" type="Label" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Erosion Anim Length"
+horizontal_alignment = 1
+
+[node name="Erosion_anim_length" type="SpinBox" parent="Panel/Tabs/Other"]
+layout_mode = 2
+tooltip_text = "In seconds"
+min_value = 0.5
+step = 0.5
+value = 0.5
+
+[node name="space" type="Label" parent="Panel/Tabs/Other"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Set_defaults" type="Button" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Reset parameters"
+
+[node name="Save" type="Button" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Save heightmap png"

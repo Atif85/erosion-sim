@@ -11,7 +11,7 @@ var min_fov: float = 30.0
 var default_fov : float = 70
 
 # Rotating mesh vars
-@export var rotate_sensitivity: float = 0.005
+@export var rotate_sensitivity: float = 0.004
 var rotating_mesh := false
 
 # Other vars
@@ -26,10 +26,10 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action("go_down") and event.is_pressed():
-		position.y -= 2
+		position.y -= 3
 	elif event.is_action("go_up") and event.is_pressed():
-		position.y += 2
-	position.y = clamp(position.y, 150,350)
+		position.y += 3
+	position.y = clamp(position.y, 100,1000)
 
 func _unhandled_input(event: InputEvent) -> void:
 	mouse_pos = get_viewport().get_mouse_position()
@@ -58,6 +58,3 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func clamp_fov():
 	fov = clamp(fov, min_fov, max_fov)
-
-func position_cam():
-	position.y = clamp(main.height_scale - 20, 200,320)
