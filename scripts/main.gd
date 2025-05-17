@@ -17,7 +17,6 @@ const DEFAULT_FREQUENCY = 2.0
 const DEFAULT_ANIMATION_DURATION = 4.0
 
 # Nodes
-@onready var ui_class: UiClass = $UI
 @onready var erosion_node: Node = $Erosion
 @onready var heightmap_mesh: MeshInstance3D = $HeightmapMesh
 
@@ -85,7 +84,6 @@ func generate():
 func erode():
 	var time_start_erode = Time.get_ticks_usec()
 
-	ui_class.set_erosion_vars_from_ui()
 	eroded_map_data = erosion_node.erode_with_gpu(orignal_map_data, mapSizeWithBorder)
 	
 	var time_end_erode = Time.get_ticks_usec()
@@ -152,7 +150,7 @@ func create_map(map_size_in : int) -> PackedFloat32Array:
 			# Sample at normalized coords
 			var v = noise.get_noise_2d(x / float(map_size_in), y / float(map_size_in))
 			# Remap from [-1,1] to [0,1]
-			map[y * map_size_in + x] = (v + 1.0) * 0.5
+			map[y * map_size_in + x] = v * 0.5 + 0.5
 	
 	var time_end_erode = Time.get_ticks_usec()
 	print("Map create from noise in ",(time_end_erode - time_start_erode)/ 1000000.0," seconds")

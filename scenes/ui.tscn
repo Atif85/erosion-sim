@@ -151,10 +151,10 @@ rounded = true
 
 [node name="Height_label" type="Label" parent="Panel/Tabs/Noise/Container"]
 layout_mode = 2
-text = "Height"
+text = "Height : "
 horizontal_alignment = 1
 
-[node name="Height" type="SpinBox" parent="Panel/Tabs/Noise/Container"]
+[node name="Height" type="HSlider" parent="Panel/Tabs/Noise/Container"]
 layout_mode = 2
 min_value = 1.0
 max_value = 1000.0

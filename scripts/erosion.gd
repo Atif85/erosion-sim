@@ -108,9 +108,8 @@ func _update_erosion_brush(current_radius: int, map_size_for_offsets: int):
 
 	last_brush_radius_processed = current_radius
 
-func erode_with_gpu(heightmap_in: PackedFloat32Array, map_size_in: int) -> PackedFloat32Array:
+func erode_with_gpu(heightmap_in: PackedFloat32Array, map_size_in: int, droplets_in:int = num_droplets) -> PackedFloat32Array:
 
-	
 	# Creating storage buffers
 	var hm_bytes := heightmap_in.to_byte_array()
 	var hm_buffer = rd.storage_buffer_create(hm_bytes.size(), hm_bytes)
@@ -168,7 +167,7 @@ func erode_with_gpu(heightmap_in: PackedFloat32Array, map_size_in: int) -> Packe
 	# Calculate number of work groups needed
 	var local_group_size = 1024
 	@warning_ignore("integer_division")
-	var num_groups = (num_droplets + local_group_size - 1) / local_group_size # Ceiling division
+	var num_groups = (droplets_in + local_group_size - 1) / local_group_size # Ceiling division
 	
 	rd.compute_list_dispatch(compute_list, num_groups, 1, 1) # Dispatch groups
 	rd.compute_list_end()
