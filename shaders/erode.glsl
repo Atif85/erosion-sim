@@ -10,9 +10,19 @@ layout(set = 0, binding = 0, std430) buffer HeightmapBuffer
     float map[]; 
 };
 
+layout(set = 0, binding = 1) buffer BrushIndexBuffer{
+    int brushIndices[];
+};
+
+layout(set = 0, binding = 2) buffer BrushWeightsBuffer{
+    float brushWeights[];
+};
+
 layout(push_constant, std430) uniform PushConstants
 {
     int mapSize;
+    int brushLength;
+    int borderSize;
     int maxSteps;
     float inertia;
     float capacityFactor;
@@ -25,18 +35,6 @@ layout(push_constant, std430) uniform PushConstants
     float startWater;
     float time;
 } pc;
-
-const float EROSION_KERNEL  [9] = float[]
-(
-    0.05, 0.1, 0.05,
-    0.1,  0.4, 0.1,
-    0.05, 0.1, 0.05
-);
-
-float getKernelValue(int row, int col)
-{
-    return EROSION_KERNEL[row * 3 + col];
-}
 
 // function to calculate the height and the gradient
 vec3 calculateHeightAndGradient(float posX, float posY)
@@ -196,31 +194,20 @@ void main()
         else
         {
             // Erode terrain
-            float amountToErode = min((sedimentCapacity - sediment) * pc.erodeSpeed, -heightDelta); // Can't erode more than height difference
+            float amountToErode = min((sedimentCapacity - sediment) * pc.erodeSpeed, -heightDelta); 
+            for (int i = 0; i < pc.brushLength; i++) {
+                int erodeIndex = dropletIndex + brushIndices[i];
 
-            for (int i = -1; i < 2; i++)
-            {
-                for (int j = -1; j < 2; j++)
-                {
-                    int ix = clamp(nodeX + i, 0, pc.mapSize - 1);
-                    int iy = clamp(nodeY + j, 0, pc.mapSize - 1);
-                    float kernelWeight = getKernelValue(i + 1, j + 1);
-                    float remove = amountToErode * kernelWeight;
-
-                    int erodeIndex = iy * pc.mapSize + ix;
-
-                    float actualRemove = min(remove, map[erodeIndex]);
-                    atomicAdd(map[erodeIndex], -actualRemove); 
-
-                    map[erodeIndex] = clamp(map[erodeIndex], 0.0, 1.0);
-
-                    sediment += remove;
-                }
+                float removeAmount = amountToErode * brushWeights[i];
+                float deltaSediment = (map[erodeIndex] < removeAmount) ? map[erodeIndex] : removeAmount;
+                atomicAdd(map[erodeIndex], -deltaSediment); 
+                map[erodeIndex] = clamp(map[erodeIndex], 0.0, 1.0);
+                sediment += deltaSediment;
             }
         }
     
         // Update speed and water amount
-        speed = sqrt(speed * speed + heightDelta * pc.gravity); // Apply gravity, prevent negative speed squared
-        water *= (1.0 - pc.evaporateSpeed); // Evaporate water
+        speed = sqrt(speed * speed + heightDelta * pc.gravity);
+        water *= (1.0 - pc.evaporateSpeed);
     }
 }

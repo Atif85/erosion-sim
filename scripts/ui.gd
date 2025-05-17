@@ -1,3 +1,4 @@
+# ui.gd
 extends CanvasLayer
 class_name UiClass
 
@@ -25,6 +26,7 @@ class_name UiClass
 @onready var ui_gravity: SpinBox = $Panel/Tabs/Erosion/Container/Gravity
 @onready var ui_start_speed: SpinBox = $Panel/Tabs/Erosion/Container/Start_speed
 @onready var ui_start_water: SpinBox = $Panel/Tabs/Erosion/Container/Start_water
+@onready var ui_erosion_radius: SpinBox = $Panel/Tabs/Erosion/Container/Erosion_radius
 
 # Ui buttons
 @onready var regen_button: Button = $Panel/Tabs/Noise/Container/Regenerate
@@ -37,10 +39,15 @@ class_name UiClass
 @onready var file_dialog: FileDialog = $Panel/FileDialog
 @onready var snow_slope: HSlider = $Panel/Tabs/Other/Snow_slope
 @onready var snow_blend: HSlider = $Panel/Tabs/Other/Snow_blend
+@onready var snow_color: ColorPickerButton = $Panel/Tabs/Other/Snow_color
+@onready var rock_color: ColorPickerButton = $Panel/Tabs/Other/Rock_color
 
 # Script Nodes
 @onready var main: MainClass = $".."
 @onready var erosion: Node = $"../Erosion"
+
+const SNOW_COLOR :=  Color(0.9, 0.9, 0.85, 1.0)
+const ROCK_COLOR := Color(0.06, 0.06, 0.1, 1.0)
 
 func _ready() -> void:
 	set_vars_to_default()
@@ -49,12 +56,16 @@ func _ready() -> void:
 	regen_button.pressed.connect(regen_button_pressed)
 	erode_gpu.pressed.connect(erode_gpu_pressed)
 	save.pressed.connect(save_as_png)
+	erosion_anim.pressed.connect(main.animated_erosion)
+	set_defaults.pressed.connect(_set_defaults)
+
 	snow_slope.value_changed.connect(_on_snow_slope_value_changed)
 	snow_blend.value_changed.connect(_on_snow_blend_value_changed)
-	erosion_anim.pressed.connect(main.animated_erosion)
-	noise_type_selector.item_selected.connect(on_noise_type_changed)
-	set_defaults.pressed.connect(set_vars_to_default)
+	snow_color.color_changed.connect(_on_snow_color_changed)
+	rock_color.color_changed.connect(_on_rock_color_changed)
+
 	erosion_anim_length.value_changed.connect(set_animation_duration)
+	noise_type_selector.item_selected.connect(on_noise_type_changed)
 	
 	# Getting file dialog ready
 	file_dialog.use_native_dialog = true
@@ -64,6 +75,10 @@ func _ready() -> void:
 	file_dialog.current_file = "heightmap.png"
 	file_dialog.file_selected.connect(on_file_dialog_file_selected)
 
+func _set_defaults():
+	set_vars_to_default()
+	main.material.set_shader_parameter("snow_color", SNOW_COLOR)
+	main.material.set_shader_parameter("rock_color", ROCK_COLOR)
 
 
 func _on_snow_slope_value_changed(value: float) -> void:
@@ -71,6 +86,12 @@ func _on_snow_slope_value_changed(value: float) -> void:
 
 func _on_snow_blend_value_changed(value: float) -> void:
 	main.material.set_shader_parameter("snow_blend_amount", value)
+
+func _on_snow_color_changed(color: Color) -> void:
+	main.material.set_shader_parameter("snow_color", color)
+
+func _on_rock_color_changed(color: Color) -> void:
+	main.material.set_shader_parameter("rock_color", color)
 
 func on_noise_type_changed(index: int) -> void:
 	# Update the noise type based on the selected index
@@ -115,6 +136,7 @@ func set_erosion_vars_from_ui():
 	erosion.gravity = ui_gravity.value
 	erosion.start_speed = ui_start_speed.value
 	erosion.start_water = ui_start_water.value
+	erosion.erosion_brush_radius = ui_erosion_radius.value
 
 func set_noise_vars_from_ui():
 	main.map_size       = ui_mapsize.value
@@ -150,6 +172,7 @@ func set_vars_to_default():
 	ui_gravity.value        = erosion.DEFAULT_GRAVITY
 	ui_start_speed.value    = erosion.DEFAULT_START_SPEED
 	ui_start_water.value    = erosion.DEFAULT_START_WATER
+	ui_erosion_radius.value = erosion.DEFAULT_EROSION_BRUSH_RADIUS
 
 	# Setting vars to default
 	# noise vars
@@ -174,10 +197,13 @@ func set_vars_to_default():
 	erosion.gravity            = erosion.DEFAULT_GRAVITY
 	erosion.start_speed        = erosion.DEFAULT_START_SPEED
 	erosion.start_water        = erosion.DEFAULT_START_WATER
+	erosion.erosion_brush_radius = erosion.DEFAULT_EROSION_BRUSH_RADIUS
 
 	# Setting default values for snow vars
 	snow_slope.value = 0.24
 	snow_blend.value = 0.3
+	snow_color.color = SNOW_COLOR
+	rock_color.color = ROCK_COLOR
 
 	# Setting default values for animation
 	erosion_anim_length.value = main.DEFAULT_ANIMATION_DURATION

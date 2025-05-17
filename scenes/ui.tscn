@@ -287,6 +287,18 @@ layout_mode = 2
 step = 0.1
 value = 1.0
 
+[node name="Erosion_radius_label" type="Label" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+text = "Erosion Radius"
+horizontal_alignment = 1
+
+[node name="Erosion_radius" type="SpinBox" parent="Panel/Tabs/Erosion/Container"]
+layout_mode = 2
+min_value = 1.0
+max_value = 5.0
+value = 1.0
+rounded = true
+
 [node name="Label" type="Label" parent="Panel/Tabs/Erosion/Container"]
 layout_mode = 2
 
@@ -325,6 +337,24 @@ horizontal_alignment = 1
 layout_mode = 2
 max_value = 1.0
 step = 0.01
+
+[node name="Snow_color_label" type="Label" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Snow Color"
+horizontal_alignment = 1
+
+[node name="Snow_color" type="ColorPickerButton" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Snow_color"
+
+[node name="Rock_color_label" type="Label" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Rock Color"
+horizontal_alignment = 1
+
+[node name="Rock_color" type="ColorPickerButton" parent="Panel/Tabs/Other"]
+layout_mode = 2
+text = "Snow_color"
 
 [node name="Erosion_anim_length_label" type="Label" parent="Panel/Tabs/Other"]
 layout_mode = 2

@@ -1,3 +1,4 @@
+# main.gd
 extends Node3D
 class_name MainClass
 
@@ -75,7 +76,7 @@ func initialize():
 	noise = FastNoiseLite.new()
 
 func generate():
-	mapSizeWithBorder = map_size + erosion_node.erosionBrushRadius * 2
+	mapSizeWithBorder = map_size + erosion_node.erosion_brush_radius * 2
 	orignal_map_data = create_map(mapSizeWithBorder)
 
 	create_mesh(orignal_map_data)
@@ -107,12 +108,12 @@ func animated_erosion():
 	create_mesh(orignal_map_data)
 
 
-func create_mesh(heightmap_data : PackedFloat32Array, map_size_in : int = map_size):
+func create_mesh(heightmap_data : PackedFloat32Array):
 	# Generating the mesh
 	var plane_mesh = PlaneMesh.new()
-	plane_mesh.size = Vector2(map_size_in, map_size_in)
-	plane_mesh.subdivide_width = map_size_in - 1
-	plane_mesh.subdivide_depth = map_size_in - 1
+	plane_mesh.size = Vector2(map_size, map_size)
+	plane_mesh.subdivide_width = map_size - 1
+	plane_mesh.subdivide_depth = map_size - 1
 	
 	heightmap_mesh.set_mesh(plane_mesh)
 	
@@ -123,11 +124,11 @@ func create_mesh(heightmap_data : PackedFloat32Array, map_size_in : int = map_si
 	# Set Shader Parameters
 	material.set_shader_parameter("heightmap_texture", heightmap_texture)
 	material.set_shader_parameter("height_scale", height_scale)
-	material.set_shader_parameter("pixel_size", Vector2(1.0 / float(map_size_in), 1.0 / float(map_size_in)))
-	material.set_shader_parameter("map_size_uniform", float(map_size_in))
+	material.set_shader_parameter("pixel_size", Vector2(1.0 / float(map_size), 1.0 / float(map_size)))
+	material.set_shader_parameter("map_size_uniform", float(map_size))
 
 	# Position the mesh correctly based on its size
-	heightmap_mesh.position = Vector3(int(map_size_in/2.0),0,int(map_size_in/2.0))
+	heightmap_mesh.position = Vector3(int(map_size/2.0),0,int(map_size/2.0))
 
 func create_map(map_size_in : int) -> PackedFloat32Array:
 	var time_start_erode = Time.get_ticks_usec()
@@ -162,7 +163,9 @@ func create_image(heightmap_data : PackedFloat32Array ,save_png : bool = false, 
 	var image = Image.create_empty(map_size, map_size, false, Image.FORMAT_RF)
 	for y in range(map_size):
 		for x in range(map_size):
-			var index =  (y + erosion_node.erosionBrushRadius) * mapSizeWithBorder + (x + erosion_node.erosionBrushRadius)
+			var n_x = clamp(x + erosion_node.erosion_brush_radius, 0 , mapSizeWithBorder - 1)
+			var n_y = clamp(y + erosion_node.erosion_brush_radius, 0 , mapSizeWithBorder - 1)
+			var index =  (n_y) * mapSizeWithBorder + (n_x)
 			var height_val = heightmap_data[index]
 			# Store the float height value in the Red channel of the Color
 			image.set_pixel(x, y, Color(height_val, 0.0, 0.0))
