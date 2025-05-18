@@ -97,9 +97,15 @@ func generate():
 
 func hydraulic_erode():
 	var time_start_erode = Time.get_ticks_usec()
+	var before = null
 
-	var before = orignal_map_data.duplicate()
-	eroded_map_data = hydraulic_erosion_node.erode_with_gpu(orignal_map_data, mapSizeWithBorder)
+	if not have_eroded:
+		before = orignal_map_data.duplicate()
+	else:
+		
+		before = eroded_map_data.duplicate()
+
+	eroded_map_data = hydraulic_erosion_node.erode_with_gpu(before, mapSizeWithBorder)
 
 	# Update erosion_heatmap (difference per cell)
 	for i in range(orignal_map_data.size()):
