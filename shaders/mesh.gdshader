@@ -13,6 +13,10 @@ uniform vec4 snow_color  : source_color = vec4(0.9, 0.9, 0.85, 1.0);
 uniform float snow_slope_threshold : hint_range(0.0, 1.0) = 0.24;
 uniform float snow_blend_amount    : hint_range(0.0, 1.0) = 0.3;
 
+// Optional visual overlay
+uniform sampler2D visual_texture : hint_default_black, filter_linear, repeat_disable;
+uniform bool use_visual_texture = false;
+
 // Data passed from vertex to fragment shader
 varying vec3 world_pos_varying;
 varying vec3 normal_varying;
@@ -51,10 +55,14 @@ void fragment() {
 	// Derive slope factor (0 = flat ~ horizontal normal.y=1, 1 = vertical ~ normal.y=0)
 	float slope = 1.0 - clamp(world_normal.y, 0.0, 1.0);
 
-	// Coloring Logic
-	float snowBlendHeight = snow_slope_threshold * (1.0 - snow_blend_amount);
-	float snowWeight = 1.0 - clamp((slope - snowBlendHeight) / (snow_slope_threshold - snowBlendHeight), 0.0, 1.0);
-	ALBEDO = mix(rock_color.rgb, snow_color.rgb, snowWeight);
+	if (use_visual_texture) {
+		ALBEDO = texture(visual_texture, UV).rgb;
+	} else {
+		// Coloring Logic
+		float snowBlendHeight = snow_slope_threshold * (1.0 - snow_blend_amount);
+		float snowWeight = 1.0 - clamp((slope - snowBlendHeight) / (snow_slope_threshold - snowBlendHeight), 0.0, 1.0);
+		ALBEDO = mix(rock_color.rgb, snow_color.rgb, snowWeight);
+	}
 
 	// Ambient Occlusion
 	float ao = clamp(1.0 - height_varying * 0.01, 0.5, 1.0);

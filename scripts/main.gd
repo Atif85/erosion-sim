@@ -2,8 +2,7 @@
 extends Node3D
 class_name MainClass
 
-# Defaults parameters
-# These are the default parameters for the heightmap generation
+# Defaults noise parameters
 const DEFAULT_MAP_SIZE = 256
 const DEFAULT_HEIGHT_SCALE = 200.0
 const DEFAULT_SEED = 0
@@ -17,7 +16,7 @@ const DEFAULT_FREQUENCY = 2.0
 const DEFAULT_ANIMATION_DURATION = 4.0
 
 # Nodes
-@onready var erosion_node: Node = $Erosion
+@onready var hydraulic_erosion_node: Node = $Erosion/Hydraulic
 @onready var heightmap_mesh: MeshInstance3D = $HeightmapMesh
 
 # Variables for the heightmap
@@ -32,32 +31,43 @@ const DEFAULT_ANIMATION_DURATION = 4.0
 @export var lacunarity: float = DEFAULT_LACUNARITY
 @export var frequency : float = DEFAULT_FREQUENCY
 
-
-
 var orignal_map_data : PackedFloat32Array = PackedFloat32Array()
 var eroded_map_data : PackedFloat32Array = PackedFloat32Array()
+
+var have_eroded : bool = false
+var showing_erosion_heatmap : bool = false
+
 var mapSizeWithBorder : int
 var material : Material
 var rng : RandomNumberGenerator
 var noise : FastNoiseLite
 
-# Erosion animation variables
-var is_eroding_animated := false
+# Track cumulative erosion/deposition for heatmap
+var erosion_heatmap : PackedFloat32Array = PackedFloat32Array()
+
+# Animation variables
+var animation_running := false
 var animation_start_time_sec : float = 0.0 # Store time in seconds
 var animation_duration_sec : float = DEFAULT_ANIMATION_DURATION
 var map_for_animation : PackedFloat32Array
 
 func _ready():
-	initialize()
+	# initialize variables
+	material = heightmap_mesh.get_active_material(0)
+	rng = RandomNumberGenerator.new()
+	noise = FastNoiseLite.new()
+
+	# Generate the initial map
 	generate()
+	have_eroded = false
+
 
 func _process(_delta):
 
-	if is_eroding_animated:
+	if animation_running and have_eroded:
 		var current_time_sec = float(Time.get_ticks_msec()) / 1000.0
 		var elapsed_time = current_time_sec - animation_start_time_sec
 		var progress = clamp(elapsed_time / animation_duration_sec, 0.0, 1.0)
-
 
 		for i in range(orignal_map_data.size()):
 			map_for_animation[i] = lerp(orignal_map_data[i], eroded_map_data[i], progress)
@@ -66,45 +76,56 @@ func _process(_delta):
 
 		if progress >= 1.0:
 			print("erosion animation finished.")
-			is_eroding_animated = false
+			animation_running = false
 			map_for_animation.clear()
 
-func initialize():
-	material = heightmap_mesh.get_active_material(0)
-	rng = RandomNumberGenerator.new()
-	noise = FastNoiseLite.new()
-
 func generate():
-	mapSizeWithBorder = map_size + erosion_node.erosion_brush_radius * 2
+	have_eroded = false
+	showing_erosion_heatmap = false
+	clear_visual_overlay()
+
+	mapSizeWithBorder = map_size + hydraulic_erosion_node.erosion_brush_radius * 2
 	orignal_map_data = create_map(mapSizeWithBorder)
 
 	create_mesh(orignal_map_data)
 	eroded_map_data = orignal_map_data.duplicate()
 
-func erode():
+	erosion_heatmap = PackedFloat32Array()
+	erosion_heatmap.resize(mapSizeWithBorder * mapSizeWithBorder)
+	for i in range(mapSizeWithBorder * mapSizeWithBorder):
+		erosion_heatmap[i] = 0.0
+
+func hydraulic_erode():
 	var time_start_erode = Time.get_ticks_usec()
 
-	eroded_map_data = erosion_node.erode_with_gpu(orignal_map_data, mapSizeWithBorder)
-	
+	var before = orignal_map_data.duplicate()
+	eroded_map_data = hydraulic_erosion_node.erode_with_gpu(orignal_map_data, mapSizeWithBorder)
+
+	# Update erosion_heatmap (difference per cell)
+	for i in range(orignal_map_data.size()):
+		erosion_heatmap[i] += eroded_map_data[i] - before[i]
+
+	have_eroded = true
+
 	var time_end_erode = Time.get_ticks_usec()
 	print("erosion process took ",(time_end_erode - time_start_erode)/ 1000000.0," seconds")
 
-func animated_erosion():
-	if is_eroding_animated:
+func play_lerp_animation():
+	if animation_running:
 		print("Animation already in progress.")
 		return
 
-	print("Starting animated erosion_node...")
-	is_eroding_animated = true
+	print("Starting animated hydraulic_erosion_node...")
+	animation_running = true
 
-	erode()
+	if not have_eroded:
+		hydraulic_erode()
 
 	map_for_animation = orignal_map_data.duplicate()
 
 	animation_start_time_sec = float(Time.get_ticks_msec()) / 1000.0
 
 	create_mesh(orignal_map_data)
-
 
 func create_mesh(heightmap_data : PackedFloat32Array):
 	# Generating the mesh
@@ -161,8 +182,8 @@ func create_image(heightmap_data : PackedFloat32Array ,save_png : bool = false, 
 	var image = Image.create_empty(map_size, map_size, false, Image.FORMAT_RF)
 	for y in range(map_size):
 		for x in range(map_size):
-			var n_x = clamp(x + erosion_node.erosion_brush_radius, 0 , mapSizeWithBorder - 1)
-			var n_y = clamp(y + erosion_node.erosion_brush_radius, 0 , mapSizeWithBorder - 1)
+			var n_x = clamp(x + hydraulic_erosion_node.erosion_brush_radius, 0 , mapSizeWithBorder - 1)
+			var n_y = clamp(y + hydraulic_erosion_node.erosion_brush_radius, 0 , mapSizeWithBorder - 1)
 			var index =  (n_y) * mapSizeWithBorder + (n_x)
 			var height_val = heightmap_data[index]
 			# Store the float height value in the Red channel of the Color
@@ -172,3 +193,36 @@ func create_image(heightmap_data : PackedFloat32Array ,save_png : bool = false, 
 		image.save_png(save_path)
 		print("Image saved to ", save_path)
 	return image
+
+# Visualize the erosion/deposition heatmap
+func show_erosion_heatmap():
+	if not have_eroded or animation_running:
+		return
+
+	showing_erosion_heatmap = true
+
+	var image = Image.create_empty(map_size, map_size, false, Image.FORMAT_RGBA8)
+	var max_abs = 0.0
+	for i in range(erosion_heatmap.size()):
+		max_abs = max(max_abs, abs(erosion_heatmap[i]))
+	if max_abs < 1e-6:
+		max_abs = 1.0
+	for y in range(map_size):
+		for x in range(map_size):
+			var n_x = clamp(x + hydraulic_erosion_node.erosion_brush_radius, 0, mapSizeWithBorder - 1)
+			var n_y = clamp(y + hydraulic_erosion_node.erosion_brush_radius, 0, mapSizeWithBorder - 1)
+			var index = (n_y) * mapSizeWithBorder + (n_x)
+			var v = erosion_heatmap[index] / max_abs
+			# Red = erosion, Blue = deposition, Black = none
+			var color = Color(0,0,0,1)
+			if v > 0.0:
+				color = Color(0.0, 0.0, min(1.0, v), 1.0) # Blue for deposition
+			elif v < 0.0:
+				color = Color(min(1.0, -v), 0.0, 0.0, 1.0) # Red for erosion
+			image.set_pixel(x, y, color)
+	var tex = ImageTexture.create_from_image(image)
+	material.set_shader_parameter("visual_texture", tex)
+	material.set_shader_parameter("use_visual_texture", true)
+
+func clear_visual_overlay():
+	material.set_shader_parameter("use_visual_texture", false)

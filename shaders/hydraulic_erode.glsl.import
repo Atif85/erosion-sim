@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://d27u33sssae6u"
+path="res://.godot/imported/hydraulic_erode.glsl-097d03c18ab7461cd3c338f4e92d41de.res"
+
+[deps]
+
+source_file="res://shaders/hydraulic_erode.glsl"
+dest_files=["res://.godot/imported/hydraulic_erode.glsl-097d03c18ab7461cd3c338f4e92d41de.res"]
+
+[params]
+

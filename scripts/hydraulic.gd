@@ -14,7 +14,7 @@ const DEFAULT_GRAVITY = 4
 const DEFAULT_START_SPEED = 1
 const DEFAULT_START_WATER = 1
 const DEFAULT_EROSION_BRUSH_RADIUS = 3
-const DEFAULT_SHADER_PATH = "res://shaders/erode.glsl"
+const DEFAULT_SHADER_PATH = "res://shaders/hydraulic_erode.glsl"
 
 # Erosion vars
 @export var num_droplets: int = 70000
