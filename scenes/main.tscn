@@ -1,9 +1,10 @@
-[gd_scene load_steps=13 format=3 uid="uid://bakasvwixbwnb"]
+[gd_scene load_steps=14 format=3 uid="uid://bakasvwixbwnb"]
 
 [ext_resource type="Script" uid="uid://djofm47htbrvh" path="res://scripts/main.gd" id="1_0wfyh"]
 [ext_resource type="Shader" uid="uid://di5rt2rv6c1sy" path="res://shaders/mesh.gdshader" id="2_jyhfs"]
 [ext_resource type="Script" uid="uid://bo32k3nolgiyl" path="res://scripts/hydraulic.gd" id="2_tbgi4"]
 [ext_resource type="Script" uid="uid://de6uir4dv16wi" path="res://scripts/camera.gd" id="3_tbgi4"]
+[ext_resource type="Script" uid="uid://gbqvu2xp4sbc" path="res://scripts/thermal.gd" id="3_tefeu"]
 [ext_resource type="PackedScene" uid="uid://c50vflhun6ysl" path="res://scenes/ui.tscn" id="5_tbgi4"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_jyhfs"]
@@ -70,7 +71,8 @@ shadow_enabled = true
 [node name="Hydraulic" type="Node" parent="Erosion"]
 script = ExtResource("2_tbgi4")
 
-[node name="Node" type="Node" parent="Erosion"]
+[node name="Thermal" type="Node" parent="Erosion"]
+script = ExtResource("3_tefeu")
 
 [node name="Camera" type="Camera3D" parent="."]
 transform = Transform3D(-0.707107, 0.353553, -0.612373, 0, 0.866026, 0.5, 0.707107, 0.353553, -0.612373, -10, 208, -65)

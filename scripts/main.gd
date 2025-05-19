@@ -17,7 +17,9 @@ const DEFAULT_ANIMATION_DURATION = 4.0
 
 # Nodes
 @onready var hydraulic_erosion_node: Node = $Erosion/Hydraulic
+@onready var thermal_erosion_node: Node = $Erosion/Thermal
 @onready var heightmap_mesh: MeshInstance3D = $HeightmapMesh
+@onready var ui_manager: ErosionUiManager = $UI
 
 # Variables for the heightmap
 @export var map_size = DEFAULT_MAP_SIZE
@@ -56,7 +58,6 @@ func _ready():
 	material = heightmap_mesh.get_active_material(0)
 	rng = RandomNumberGenerator.new()
 	noise = FastNoiseLite.new()
-
 	# Generate the initial map
 	generate()
 	have_eroded = false
@@ -95,26 +96,47 @@ func generate():
 	for i in range(mapSizeWithBorder * mapSizeWithBorder):
 		erosion_heatmap[i] = 0.0
 
+
+
+# -- Erosion functions --
+# Hydraulic erosion
 func hydraulic_erode():
 	var time_start_erode = Time.get_ticks_usec()
-	var before = null
 
 	if not have_eroded:
-		before = orignal_map_data.duplicate()
+		eroded_map_data = hydraulic_erosion_node.hydraulic_erode(orignal_map_data, mapSizeWithBorder)
 	else:
-		
-		before = eroded_map_data.duplicate()
+		eroded_map_data = hydraulic_erosion_node.hydraulic_erode(eroded_map_data, mapSizeWithBorder)
 
-	eroded_map_data = hydraulic_erosion_node.erode_with_gpu(before, mapSizeWithBorder)
-
-	# Update erosion_heatmap (difference per cell)
-	for i in range(orignal_map_data.size()):
-		erosion_heatmap[i] += eroded_map_data[i] - before[i]
+	update_erosion_heatmap()
 
 	have_eroded = true
 
 	var time_end_erode = Time.get_ticks_usec()
 	print("erosion process took ",(time_end_erode - time_start_erode)/ 1000000.0," seconds")
+
+# Thermal erosion
+func thermal_erode():
+	var time_start_erode = Time.get_ticks_usec()
+
+	if not have_eroded:
+		eroded_map_data = thermal_erosion_node.thermal_erode(orignal_map_data, mapSizeWithBorder, height_scale)
+	else:
+		eroded_map_data = thermal_erosion_node.thermal_erode(eroded_map_data, mapSizeWithBorder, height_scale)
+	
+	update_erosion_heatmap()
+
+	have_eroded = true
+
+	var time_end_erode = Time.get_ticks_usec()
+	print("thermal process took ",(time_end_erode - time_start_erode)/ 1000000.0," seconds")
+
+func update_erosion_heatmap():
+	# Clear the heatmap before updating for the current step
+	for i in range(erosion_heatmap.size()):
+		erosion_heatmap[i] = 0.0
+	for i in range(orignal_map_data.size()):
+		erosion_heatmap[i] += eroded_map_data[i] - orignal_map_data[i]
 
 func play_lerp_animation():
 	if animation_running:
@@ -162,6 +184,7 @@ func create_map(map_size_in : int) -> PackedFloat32Array:
 		rng.randomize()
 		Seed = rng.randi_range(-100000, 100000)
 
+	ui_manager.ui_seed.value = Seed
 	noise.seed               = Seed 
 	noise.noise_type         = noise_type
 	noise.fractal_type       = fractal_type
@@ -232,3 +255,4 @@ func show_erosion_heatmap():
 
 func clear_visual_overlay():
 	material.set_shader_parameter("use_visual_texture", false)
+	showing_erosion_heatmap = false

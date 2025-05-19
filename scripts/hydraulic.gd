@@ -1,5 +1,4 @@
-# erosion.gd
-extends Node
+extends "res://scripts/erosion_helper.gd"
 
 # Default parameters
 const DEFAULT_NUM_DROPLETS = 70000
@@ -32,7 +31,6 @@ const DEFAULT_SHADER_PATH = "res://shaders/hydraulic_erode.glsl"
 
 
 # Shader vars
-var rd: RenderingDevice
 var shader_rid: RID     
 var pipeline_rid: RID
 var push_constant_size = 64
@@ -44,9 +42,9 @@ var last_brush_radius_processed = -1
 var brush_length = 0
 
 func _ready() -> void:
-	call_deferred("init_rendering_device")
+	init_shader()
 
-func init_rendering_device():
+func init_shader():
 	# Initialize the RenderingDevice
 	rd = RenderingServer.get_rendering_device()
 	if not rd:
@@ -108,7 +106,7 @@ func _update_erosion_brush(current_radius: int, map_size_for_offsets: int):
 
 	last_brush_radius_processed = current_radius
 
-func erode_with_gpu(heightmap_in: PackedFloat32Array, map_size_in: int, droplets_in:int = num_droplets) -> PackedFloat32Array:
+func hydraulic_erode(heightmap_in: PackedFloat32Array, map_size_in: int, droplets_in:int = num_droplets) -> PackedFloat32Array:
 
 	# Creating storage buffers
 	var hm_bytes := heightmap_in.to_byte_array()

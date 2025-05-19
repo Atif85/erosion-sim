@@ -7,9 +7,13 @@ func _ready() -> void:
 	
 	# Connecting buttons
 	regen_noise_button.pressed.connect(_regen_noise_pressed)
-	hydraulic_erode.pressed.connect(hydraulic_erode_pressed)
+	hydraulic_erode_button.pressed.connect(_on_hydraulic_erode_pressed)
+	hydraulic_animate_button.pressed.connect(play_lerp_animation_pressed)
+
+	thermal_erode_button.pressed.connect(_on_thermal_erode_pressed)
+	thermal_animate_button.pressed.connect(play_lerp_animation_pressed)
+
 	save.pressed.connect(save_as_png)
-	animate_button.pressed.connect(play_lerp_animation_pressed)
 	set_defaults.pressed.connect(_set_all_defaults)
 	show_heatmap_button.pressed.connect(_on_show_heatmap_pressed)
 	clear_overlay_button.pressed.connect(_on_clear_overlay_pressed)
@@ -38,6 +42,47 @@ func _set_all_defaults():
 	set_vars_to_default()
 	main.material.set_shader_parameter("snow_color", SNOW_COLOR)
 	main.material.set_shader_parameter("rock_color", ROCK_COLOR)
+
+
+# Main buttons
+func _regen_noise_pressed() -> void:
+	if main.animation_running:
+		print("Animation already in progress.")
+		return
+	# Saving the values from the Ui and then generating
+	set_noise_vars_from_ui()
+	main.generate()
+	ui_seed.value = main.Seed
+
+func _on_hydraulic_erode_pressed():
+	if main.animation_running:
+		print("Animation already in progress.")
+		return
+	
+	set_hydraulic_erosion_vars_from_ui()
+	main.hydraulic_erode()
+	main.create_mesh(main.eroded_map_data)
+
+	if main.showing_erosion_heatmap:
+		main.show_erosion_heatmap()
+
+func _on_thermal_erode_pressed():
+	if main.animation_running:
+		print("Animation already in progress.")
+		return
+	
+	set_thermal_erosion_vars_from_ui()
+	main.thermal_erode()
+	main.create_mesh(main.eroded_map_data)
+
+	if main.showing_erosion_heatmap:
+		main.show_erosion_heatmap()
+
+func play_lerp_animation_pressed():
+	set_hydraulic_erosion_vars_from_ui()
+	main.play_lerp_animation()
+
+
 
 func _ui_height_value_changed(value: float) -> void:
 	ui_height_label.text = "Height Scale: " + str(value)
@@ -79,30 +124,7 @@ func _on_rock_color_changed(color: Color) -> void:
 	main.material.set_shader_parameter("rock_color", color)
 
 
-
-func _regen_noise_pressed() -> void:
-	if main.animation_running:
-		print("Animation already in progress.")
-		return
-	# Saving the values from the Ui and then generating
-	set_noise_vars_from_ui()
-	main.generate()
-	ui_seed.value = main.Seed
-
-func hydraulic_erode_pressed():
-	if main.animation_running:
-		print("Animation already in progress.")
-		return
-	set_hydraulic_erosion_vars_from_ui()
-	main.hydraulic_erode()
-	main.create_mesh(main.eroded_map_data)
-
-func play_lerp_animation_pressed():
-	set_hydraulic_erosion_vars_from_ui()
-	main.play_lerp_animation()
-
-
-
+# Overlay buttons
 func _on_show_heatmap_pressed():
 	main.show_erosion_heatmap()
 
@@ -121,14 +143,19 @@ func set_noise_vars_from_ui():
 	main.num_octaves    = int(ui_octaves.value)
 
 func set_hydraulic_erosion_vars_from_ui():
-	hydraulic_erosion.num_droplets = ui_droplets.value
-	hydraulic_erosion.max_steps = ui_max_steps.value
-	hydraulic_erosion.inertia = ui_inertia.value
-	hydraulic_erosion.capacity_factor = ui_capacity.value
-	hydraulic_erosion.erode_rate = ui_erode_rate.value
-	hydraulic_erosion.deposit_rate = ui_deposit_rate.value
-	hydraulic_erosion.evaporate_rate = ui_evaporate_rate.value
-	hydraulic_erosion.gravity = ui_gravity.value
-	hydraulic_erosion.start_speed = ui_start_speed.value
-	hydraulic_erosion.start_water = ui_start_water.value
-	hydraulic_erosion.erosion_brush_radius = ui_erosion_radius.value
+	hydraulic_erosion_node.num_droplets = ui_droplets.value
+	hydraulic_erosion_node.max_steps = ui_max_steps.value
+	hydraulic_erosion_node.inertia = ui_inertia.value
+	hydraulic_erosion_node.capacity_factor = ui_capacity.value
+	hydraulic_erosion_node.erode_rate = ui_erode_rate.value
+	hydraulic_erosion_node.deposit_rate = ui_deposit_rate.value
+	hydraulic_erosion_node.evaporate_rate = ui_evaporate_rate.value
+	hydraulic_erosion_node.gravity = ui_gravity.value
+	hydraulic_erosion_node.start_speed = ui_start_speed.value
+	hydraulic_erosion_node.start_water = ui_start_water.value
+	hydraulic_erosion_node.erosion_brush_radius = ui_erosion_radius.value
+
+func set_thermal_erosion_vars_from_ui():
+	thermal_erosion_node.num_iterations = ui_num_iterations.value
+	thermal_erosion_node.talus_angle = ui_talus_angle.value
+	thermal_erosion_node.thermal_factor = ui_thermal_factor.value

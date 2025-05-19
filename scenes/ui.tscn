@@ -37,11 +37,10 @@ offset_right = 226.0
 offset_bottom = 596.0
 theme_override_styles/panel = SubResource("StyleBoxEmpty_sugp2")
 tab_alignment = 1
-current_tab = 2
+current_tab = 0
 drag_to_rearrange_enabled = true
 
 [node name="Noise" type="ScrollContainer" parent="Panel/Tabs"]
-visible = false
 layout_mode = 2
 theme = SubResource("Theme_tbgi4")
 follow_focus = true
@@ -324,9 +323,9 @@ rounded = true
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="Erode_GPU" type="Button" parent="Panel/Tabs/Erosion/Hydraulic/VBox"]
+[node name="Erode" type="Button" parent="Panel/Tabs/Erosion/Hydraulic/VBox"]
 layout_mode = 2
-text = "Erode with GPU"
+text = "Hydraulic Erosion"
 
 [node name="Erosion_Anim" type="Button" parent="Panel/Tabs/Erosion/Hydraulic/VBox"]
 layout_mode = 2
@@ -340,8 +339,56 @@ metadata/_tab_index = 1
 
 [node name="VBox" type="VBoxContainer" parent="Panel/Tabs/Erosion/Thermal"]
 layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="space" type="Label" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+
+[node name="Num_iterations_label" type="Label" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+text = "Num of Iterations"
+horizontal_alignment = 1
+
+[node name="Num_iterations" type="SpinBox" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+min_value = 10.0
+max_value = 100000.0
+value = 10000.0
+rounded = true
+
+[node name="Talus_angle_label" type="Label" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+text = "Talus angle"
+horizontal_alignment = 1
+
+[node name="Talus_angle" type="SpinBox" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+min_value = 0.005
+max_value = 0.1
+step = 0.001
+value = 0.1
+
+[node name="Thermal_factor_label" type="Label" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+text = "Thermal Factor"
+horizontal_alignment = 1
+
+[node name="Thermal_factor" type="SpinBox" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="Erode" type="Button" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+text = "Thermal Erosion"
+
+[node name="Erosion_Anim" type="Button" parent="Panel/Tabs/Erosion/Thermal/VBox"]
+layout_mode = 2
+text = "Animated Erosion"
 
 [node name="Other" type="ScrollContainer" parent="Panel/Tabs"]
+visible = false
 layout_mode = 2
 follow_focus = true
 metadata/_tab_index = 2
