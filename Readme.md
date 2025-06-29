@@ -40,9 +40,15 @@ It’s open source feel free to use, modify, or contribute.
 
 ## How to Use
 
-1. Clone or download this repository.
-2. Open the project in [Godot 4](https://godotengine.org/).
-3. Run the main scene to start experimenting.
+You have two options:
+
+**1. Download from itch.io**  
+[Download the latest build on itch.io](https://atif85.itch.io/erosion-simulator)
+
+**2. Run or modify in Godot**  
+- Clone or download this repository.
+- Open the project in [Godot 4](https://godotengine.org/).
+- Run the main scene to start experimenting.
 
 ## License
 
