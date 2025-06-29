@@ -473,3 +473,12 @@ text = "Show heatmap"
 [node name="Clear_Overlay" type="Button" parent="Panel/Tabs/Other/VBox"]
 layout_mode = 2
 text = "Clear Overlay"
+
+[node name="separator3" type="HSeparator" parent="Panel/Tabs/Other/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Accumulate_erosion" type="CheckBox" parent="Panel/Tabs/Other/VBox"]
+layout_mode = 2
+tooltip_text = "If enabled, each erosion operation is applied to the already eroded map. If disabled, erosion always starts from the original noise map."
+text = " Accumulate erosion"

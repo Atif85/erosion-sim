@@ -45,19 +45,12 @@ func _ready() -> void:
 	init_shader()
 
 func init_shader():
-	# Initialize the RenderingDevice
-	rd = RenderingServer.get_rendering_device()
-	if not rd:
-		printerr("Erosion Node: Failed to get RenderingDevice.")
+	var result = load_and_compile_shader(shader_path)
+	shader_rid = result[0]
+	pipeline_rid = result[1]
+	if not shader_rid.is_valid() or not pipeline_rid.is_valid():
+		printerr("Erosion Node: Failed to load/compile shader.")
 		return
-	
-	# Load the shader
-	var shader_file: Resource = load(shader_path)
-	# Create the shader_rid from the shader file
-	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
-
-	shader_rid = rd.shader_create_from_spirv(shader_spirv)
-	pipeline_rid = rd.compute_pipeline_create(shader_rid)
 
 # Function to precompute erosion brush and create/update GPU buffers
 func _update_erosion_brush(current_radius: int, map_size_for_offsets: int):
@@ -66,8 +59,7 @@ func _update_erosion_brush(current_radius: int, map_size_for_offsets: int):
 		return
 
 	# Free old buffers if they exist
-	if brush_indices_buffer_rid.is_valid(): rd.free_rid(brush_indices_buffer_rid)
-	if brush_weights_buffer_rid.is_valid(): rd.free_rid(brush_weights_buffer_rid)
+	cleanup_rids([brush_indices_buffer_rid, brush_weights_buffer_rid])
 
 	var brush_idx_offsets = PackedInt32Array()
 	var brush_wts = PackedFloat32Array()
@@ -77,7 +69,6 @@ func _update_erosion_brush(current_radius: int, map_size_for_offsets: int):
 		for r_x in range(-current_radius, current_radius + 1):
 			var sqr_dst = float(r_x * r_x + r_y * r_y)
 			if sqr_dst < float(current_radius * current_radius):
-				# Offset is relative to droplet's integer cell, using internal map width
 				var offset = r_y * map_size_for_offsets + r_x
 				brush_idx_offsets.append(offset)
 				var brush_weight = 1.0 - sqrt(sqr_dst) / float(current_radius)
@@ -85,33 +76,24 @@ func _update_erosion_brush(current_radius: int, map_size_for_offsets: int):
 				brush_wts.append(brush_weight)
 
 	brush_length = brush_idx_offsets.size()
-	if brush_length == 0: # Should not happen with radius > 0
+	if brush_length == 0:
 		printerr("Warning: Erosion brush is empty for radius ", current_radius)
 		last_brush_radius_processed = current_radius
 		brush_indices_buffer_rid = RID()
 		brush_weights_buffer_rid = RID()
 		return
 
-	# Normalize weights
 	if weight_sum > 0.0001:
 		for i in range(brush_wts.size()):
 			brush_wts[i] /= weight_sum
 	
-	# Create GPU buffers
-	var brush_idx_bytes = brush_idx_offsets.to_byte_array()
-	brush_indices_buffer_rid = rd.storage_buffer_create(brush_idx_bytes.size(), brush_idx_bytes)
-
-	var brush_wts_bytes = brush_wts.to_byte_array()
-	brush_weights_buffer_rid = rd.storage_buffer_create(brush_wts_bytes.size(), brush_wts_bytes)
+	brush_indices_buffer_rid = create_storage_buffer(brush_idx_offsets)
+	brush_weights_buffer_rid = create_storage_buffer(brush_wts)
 
 	last_brush_radius_processed = current_radius
 
-func hydraulic_erode(heightmap_in: PackedFloat32Array, map_size_in: int, droplets_in:int = num_droplets) -> PackedFloat32Array:
-
-	# Creating storage buffers
-	var hm_bytes := heightmap_in.to_byte_array()
-	var hm_buffer = rd.storage_buffer_create(hm_bytes.size(), hm_bytes)
-
+func do_hydraulic_erosion(heightmap_in: PackedFloat32Array, map_size_in: int, droplets_in:int = num_droplets) -> PackedFloat32Array:
+	var hm_buffer = create_storage_buffer(heightmap_in)
 	_update_erosion_brush(erosion_brush_radius, map_size_in)
 
 	# --- Uniform Set Creation ---

@@ -1,7 +1,7 @@
 extends Camera3D
 
 # Nodes
-@onready var main: MainClass = $".."
+@onready var main: Node3D = $".."
 @onready var heightmap_mesh: MeshInstance3D = $"../HeightmapMesh"
 
 # Fov settings

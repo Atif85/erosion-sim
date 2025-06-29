@@ -1,29 +1,44 @@
 # Erosion Simulator
 
-A Godot 4 project for simulating terrain erosion using compute shaders. 
-For now it just has hydraulic erosion.
+A Godot 4 project for simulating terrain erosion using compute shaders.
 Its very inspired by the video by sebastian lague
 
 ## Features
 
 - Procedural terrain generation using FastNoiseLite
-- Hydraulic erosion simulation
+- Hydraulic erosion
+- Thermal erosion 
 - Erosion heatmap visualization (see where erosion and deposition occured)
 - UI for adjusting noise and erosion parameters
 - Export heightmaps as PNG images
 
+## Gallery
+
+**Before Erosion**  
+![Before](assets/Before.png)
+
+**After Erosion**  
+![After](assets/After.png)
+
+**Erosion Animation**  
+![Erosion Animation](assets/animation.gif) 
+
+**Eroded Heightmap**  
+![Eroded](assets/Eroded.png)
+
+**Erosion Heatmap**  
+![Eroded with Heatmap](assets/Eroded_with_Heatmap.png)
+
 ## Planned Features
 
-- **Thermal erosion** (simulating landslides and slope-based material movement)
-- **Wind erosion** (simulating sand/dust transport by wind)
-- More erosion types and visualization options
+- **Wind erosion** (once i figure it out)
 
 ## Why?
 
-I made this project to learn Godot 4 and experiment with compute shaders for real-time terrain simulation.  
+I made this to learn compute shaders.
 It’s open source feel free to use, modify, or contribute.
 
-## Getting Started
+## How to Use
 
 1. Clone or download this repository.
 2. Open the project in [Godot 4](https://godotengine.org/).

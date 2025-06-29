@@ -19,22 +19,15 @@ func _ready() -> void:
 	init_shader()
 
 func init_shader():
-	# Initialize the RenderingDevice
-	rd = RenderingServer.get_rendering_device()
-	if not rd:
-		printerr("Thermal Node: Failed to get RenderingDevice.")
+	var result = load_and_compile_shader(shader_path)
+	shader_rid = result[0]
+	pipeline_rid = result[1]
+	if not shader_rid.is_valid() or not pipeline_rid.is_valid():
+		printerr("Thermal Node: Failed to load/compile shader.")
 		return
-	
-	# Load the shader
-	var shader_file: Resource = load(shader_path)
-	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
-	shader_rid = rd.shader_create_from_spirv(shader_spirv)
-	pipeline_rid = rd.compute_pipeline_create(shader_rid)
 
-func thermal_erode(heightmap_in: PackedFloat32Array, map_size_in: int, height_scale: float, num_iters: int = num_iterations, talus: float = talus_angle, factor: float = thermal_factor) -> PackedFloat32Array:
-	# Creating storage buffer
-	var hm_bytes := heightmap_in.to_byte_array()
-	var hm_buffer = rd.storage_buffer_create(hm_bytes.size(), hm_bytes)
+func do_thermal_erosion(heightmap_in: PackedFloat32Array, map_size_in: int, height_scale: float, num_iters: int = num_iterations, talus: float = talus_angle, factor: float = thermal_factor) -> PackedFloat32Array:
+	var hm_buffer = create_storage_buffer(heightmap_in)
 
 	# --- Uniform Set Creation ---
 	var uniforms : Array[RDUniform] = []

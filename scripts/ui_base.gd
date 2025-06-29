@@ -52,12 +52,13 @@ extends CanvasLayer
 @onready var snow_blend: HSlider = $Panel/Tabs/Other/VBox/Snow_blend
 @onready var snow_color: ColorPickerButton = $Panel/Tabs/Other/VBox/Snow_color
 @onready var rock_color: ColorPickerButton = $Panel/Tabs/Other/VBox/Rock_color
+@onready var accumulate_erosion_check: CheckBox = $Panel/Tabs/Other/VBox/Accumulate_erosion
 
 # -- File dialog --
 @onready var file_dialog: FileDialog = $Panel/FileDialog
 
 # Script Nodes
-@onready var main: MainClass = $".."
+@onready var main: Node3D = $".."
 @onready var hydraulic_erosion_node: Node = $"../Erosion/Hydraulic"
 @onready var thermal_erosion_node: Node = $"../Erosion/Thermal"
 
@@ -65,6 +66,7 @@ extends CanvasLayer
 const SNOW_COLOR :=  Color(0.9, 0.9, 0.85, 1.0)
 const ROCK_COLOR := Color(0.06, 0.06, 0.1, 1.0)
 
+const SAND_COLOR := Color(0.8, 0.7, 0.5, 1.0)
 
 func set_vars_to_default():
 	# Settig ui values to default
@@ -138,3 +140,6 @@ func set_vars_to_default():
 	anim_length.value = main.DEFAULT_ANIMATION_DURATION
 	# Setting default values for hydraulic_erosion_node animation
 	main.animation_duration_sec = main.DEFAULT_ANIMATION_DURATION
+
+	# Set accumulate erosion checkbox to default value
+	accumulate_erosion_check.button_pressed = main.accumulate_erosion

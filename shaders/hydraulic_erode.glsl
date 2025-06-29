@@ -56,12 +56,12 @@ vec3 calculateHeightAndGradient(float posX, float posY)
     float heightSW = map[idx_nw + pc.mapSize];
     float heightSE = map[idx_nw + pc.mapSize + 1];
 
+    // Calculate height with bilinear interpolation
+    float height = heightNW * (1.0 - x) * (1.0 - y) + heightNE * x * (1.0 - y) + heightSW * (1.0 - x) * y + heightSE * x * y;
+
     // Calculate droplet's direction of flow with bilinear interpolation
     float gradientX = (heightNE - heightNW) * (1.0 - y) + (heightSE - heightSW) * y;
     float gradientY = (heightSW - heightNW) * (1.0 - x) + (heightSE - heightNE) * x;
-
-    // Calculate height with bilinear interpolation
-    float height = heightNW * (1.0 - x) * (1.0 - y) + heightNE * x * (1.0 - y) + heightSW * (1.0 - x) * y + heightSE * x * y;
 
     return vec3(gradientX, gradientY, height);
 }
@@ -89,16 +89,11 @@ uint rng_state;
 void seed_rng()
 {
     uvec2 uv = gl_GlobalInvocationID.xy;
-    // simple bit-mixer: interleave high and low bits, then xor with time
-    // ((x & 0xFFFF) << 16) | (y & 0xFFFF) gives a 32-bit unique seed per thread
     rng_state = ((uv.x & 0xFFFFu) << 16) | (uv.y & 0xFFFFu);
-    // mix in time (scaled to ms) so each frame is different
     rng_state ^= uint(pc.time * 1000.0);
-    // avoid zero-state
     if (rng_state == 0u) rng_state = 0xdeadbeefu;
 }
 
-// 32-bit xorshift from Marsaglia
 uint xorshift32()
 {
     uint x = rng_state;
@@ -114,7 +109,6 @@ float randf()
 {
     return float(xorshift32()) / 4294967295.0;
 }
-
 
 // Main kernel function executed by each thread
 void main()
@@ -139,6 +133,7 @@ void main()
     {
         nodeX = int(posX);
         nodeY = int(posY);
+        
         int dropletIndex = nodeY * pc.mapSize + nodeX;
 
         // Calculating droplet's offset inside the cell [0,1] range

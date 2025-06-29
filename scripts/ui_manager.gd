@@ -8,10 +8,10 @@ func _ready() -> void:
 	# Connecting buttons
 	regen_noise_button.pressed.connect(_regen_noise_pressed)
 	hydraulic_erode_button.pressed.connect(_on_hydraulic_erode_pressed)
-	hydraulic_animate_button.pressed.connect(play_lerp_animation_pressed)
+	hydraulic_animate_button.pressed.connect(play_lerp_animation_pressed_hydraulic)
 
 	thermal_erode_button.pressed.connect(_on_thermal_erode_pressed)
-	thermal_animate_button.pressed.connect(play_lerp_animation_pressed)
+	thermal_animate_button.pressed.connect(play_lerp_animation_pressed_thermal)
 
 	save.pressed.connect(save_as_png)
 	set_defaults.pressed.connect(_set_all_defaults)
@@ -29,6 +29,10 @@ func _ready() -> void:
 	anim_length.value_changed.connect(_on_animation_duration_changed)
 	noise_type_selector.item_selected.connect(_on_noise_type_changed)
 	
+	# Connect accumulate erosion checkbox
+	accumulate_erosion_check.toggled.connect(_on_accumulate_erosion_toggled)
+	accumulate_erosion_check.tooltip_text = "If enabled, each erosion operation is applied to the already eroded map. If disabled, erosion always starts from the original noise map."
+
 	# Getting file dialog ready
 	file_dialog.use_native_dialog = true
 	file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
@@ -42,6 +46,8 @@ func _set_all_defaults():
 	set_vars_to_default()
 	main.material.set_shader_parameter("snow_color", SNOW_COLOR)
 	main.material.set_shader_parameter("rock_color", ROCK_COLOR)
+	# Sync checkbox with default value
+	accumulate_erosion_check.button_pressed = main.accumulate_erosion
 
 
 # Main buttons
@@ -51,6 +57,8 @@ func _regen_noise_pressed() -> void:
 		return
 	# Saving the values from the Ui and then generating
 	set_noise_vars_from_ui()
+	# Sync checkbox value to main
+	main.accumulate_erosion = accumulate_erosion_check.button_pressed
 	main.generate()
 	ui_seed.value = main.Seed
 
@@ -66,6 +74,7 @@ func _on_hydraulic_erode_pressed():
 	if main.showing_erosion_heatmap:
 		main.show_erosion_heatmap()
 
+
 func _on_thermal_erode_pressed():
 	if main.animation_running:
 		print("Animation already in progress.")
@@ -78,11 +87,19 @@ func _on_thermal_erode_pressed():
 	if main.showing_erosion_heatmap:
 		main.show_erosion_heatmap()
 
-func play_lerp_animation_pressed():
-	set_hydraulic_erosion_vars_from_ui()
-	main.play_lerp_animation()
+func play_lerp_animation_pressed_hydraulic():
+	if main.animation_running:
+		print("Animation already in progress.")
+		return
+	set_hydraulic_erosion_vars_from_ui();
+	main.play_lerp_animation(0)
 
-
+func play_lerp_animation_pressed_thermal():
+	if main.animation_running:
+		print("Animation already in progress.")
+		return
+	set_thermal_erosion_vars_from_ui();
+	main.play_lerp_animation(1)
 
 func _ui_height_value_changed(value: float) -> void:
 	ui_height_label.text = "Height Scale: " + str(value)
@@ -159,3 +176,6 @@ func set_thermal_erosion_vars_from_ui():
 	thermal_erosion_node.num_iterations = ui_num_iterations.value
 	thermal_erosion_node.talus_angle = ui_talus_angle.value
 	thermal_erosion_node.thermal_factor = ui_thermal_factor.value
+
+func _on_accumulate_erosion_toggled(pressed: bool) -> void:
+	main.accumulate_erosion = pressed

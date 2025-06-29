@@ -1,6 +1,5 @@
 # main.gd
 extends Node3D
-class_name MainClass
 
 # Defaults noise parameters
 const DEFAULT_MAP_SIZE = 256
@@ -32,6 +31,7 @@ const DEFAULT_ANIMATION_DURATION = 4.0
 @export var gain: float = DEFAULT_GAIN
 @export var lacunarity: float = DEFAULT_LACUNARITY
 @export var frequency : float = DEFAULT_FREQUENCY
+@export var accumulate_erosion: bool = false # If true, apply erosion on already eroded map
 
 var orignal_map_data : PackedFloat32Array = PackedFloat32Array()
 var eroded_map_data : PackedFloat32Array = PackedFloat32Array()
@@ -103,10 +103,11 @@ func generate():
 func hydraulic_erode():
 	var time_start_erode = Time.get_ticks_usec()
 
-	if not have_eroded:
-		eroded_map_data = hydraulic_erosion_node.hydraulic_erode(orignal_map_data, mapSizeWithBorder)
-	else:
-		eroded_map_data = hydraulic_erosion_node.hydraulic_erode(eroded_map_data, mapSizeWithBorder)
+	var base_map = orignal_map_data
+	if accumulate_erosion and have_eroded:
+		base_map = eroded_map_data
+
+	eroded_map_data = hydraulic_erosion_node.do_hydraulic_erosion(base_map, mapSizeWithBorder)
 
 	update_erosion_heatmap()
 
@@ -119,10 +120,11 @@ func hydraulic_erode():
 func thermal_erode():
 	var time_start_erode = Time.get_ticks_usec()
 
-	if not have_eroded:
-		eroded_map_data = thermal_erosion_node.thermal_erode(orignal_map_data, mapSizeWithBorder, height_scale)
-	else:
-		eroded_map_data = thermal_erosion_node.thermal_erode(eroded_map_data, mapSizeWithBorder, height_scale)
+	var base_map = orignal_map_data
+	if accumulate_erosion and have_eroded:
+		base_map = eroded_map_data
+
+	eroded_map_data = thermal_erosion_node.do_thermal_erosion(base_map, mapSizeWithBorder, height_scale)
 	
 	update_erosion_heatmap()
 
@@ -138,7 +140,7 @@ func update_erosion_heatmap():
 	for i in range(orignal_map_data.size()):
 		erosion_heatmap[i] += eroded_map_data[i] - orignal_map_data[i]
 
-func play_lerp_animation():
+func play_lerp_animation(type: int = 0):
 	if animation_running:
 		print("Animation already in progress.")
 		return
@@ -147,7 +149,9 @@ func play_lerp_animation():
 	animation_running = true
 
 	if not have_eroded:
-		hydraulic_erode()
+		match type:
+			0: hydraulic_erode()
+			1: thermal_erode()
 
 	map_for_animation = orignal_map_data.duplicate()
 
